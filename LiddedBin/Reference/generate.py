@@ -10,7 +10,17 @@ leaves sliver triangles about 1e-10 mm thick. When Cadova imports such a mesh, M
 topology cleanup collapses vertices next to those slivers and changes the solid (the
 bin_1x1x2_nogrips_div2 case lost 6.33 mm^3 that way). With float32 coordinates the slivers
 collapse to exact duplicates and the import keeps the solid.
+
+Deliberate deviation: with no pockets (divx or divy of 0 with the default pattern, or
+gf_bin(pockets=false)) lid-bin.scad intersects the interior cut with an empty children(), which
+cuts nothing and leaves the bin solid. The port cuts the whole interior instead (a hollow bin).
+Cases in HOLLOW_PATCH are therefore generated from a patched copy of lid-bin.scad written to
+Reference/generated/ at run time (the original is never edited); see patched_scad().
+
 Usage: python3 -I Reference/generate.py [case ...]   (default: all cases)
+       python3 -I Reference/generate.py --check-patch
+The second form runs every case through the original and the patched file and reports which
+cases differ in volume (only the HOLLOW_PATCH cases should).
 """
 import json
 import struct
@@ -24,6 +34,8 @@ HERE = Path(__file__).resolve().parent
 SCAD = (HERE / "../../../Lidded Bins/lid-bin.scad").resolve()
 OUT = HERE / "reference.json"
 STL_DIR = HERE / "stl"
+GENERATED_DIR = HERE / "generated"
+LIBRARY = (SCAD.parent / "gridfinity-rebuilt-openscad/gridfinity-rebuilt-utility.scad").resolve()
 OPENSCAD = "/opt/homebrew/bin/openscad"
 FN = 64  # keep equal to the segment count used by GridfinityTestSupport measure()
 
@@ -71,6 +83,43 @@ CASES = {
 # OpenSCAD volume.
 FULL_PRECISION = {"lid_2x2x3_fit_sweep"}
 
+# Cases generated from the patched copy of lid-bin.scad (hollow bin when there are no pockets).
+HOLLOW_PATCH = {"bin_1x1x2_nogrips_div0", "bin_slice_2x2x3", "bin_slice_1x1x2_up"}
+
+
+def replace_once(text, old, new):
+    if text.count(old) != 1:
+        raise SystemExit(f"generate.py: expected exactly one occurrence of {old!r}, found {text.count(old)}")
+    return text.replace(old, new)
+
+
+def patched_scad():
+    """Writes Reference/generated/lid-bin-hollow.scad and returns its path.
+
+    Gives gf_bin_solid an all-covering child when there are no pockets, so the intersection keeps
+    the whole interior cut.
+    """
+    text = SCAD.read_text()
+    text = replace_once(
+        text,
+        "include <gridfinity-rebuilt-openscad/gridfinity-rebuilt-utility.scad>;",
+        f"include <{LIBRARY}>;",
+    )
+    text = replace_once(
+        text,
+        "    gf_bin_solid()\n    if (pockets)\n    gf_cut_pockets();\n",
+        "    gf_bin_solid()\n    if (pockets)\n    gf_cut_pockets();\n    else cube(1e5, center=true);\n",
+    )
+    text = replace_once(
+        text,
+        "    } else if (div_pattern == \"custom\") {\n        gf_custom_pockets();\n    }\n}",
+        "    } else if (div_pattern == \"custom\") {\n        gf_custom_pockets();\n    } else {\n        cube(1e5, center=true);\n    }\n}",
+    )
+    GENERATED_DIR.mkdir(exist_ok=True)
+    out = GENERATED_DIR / "lid-bin-hollow.scad"
+    out.write_text(text)
+    return out
+
 
 def parse_ascii_stl(path):
     verts = []
@@ -103,15 +152,16 @@ def round_stl_to_float32(path):
     path.write_text("\n".join(lines) + "\n")
 
 
-def run_case(name):
+def run_case(name, scad=None, stl=None):
+    scad = scad or (patched_scad() if name in HOLLOW_PATCH else SCAD)
     defines = [arg for d in CASES[name] for arg in ("-D", d)]
     STL_DIR.mkdir(exist_ok=True)
-    stl = STL_DIR / f"{name}.stl"
+    stl = stl or STL_DIR / f"{name}.stl"
     start = time.monotonic()
     try:
         subprocess.run(
             [OPENSCAD, "-o", str(stl), "--export-format", "asciistl",
-             "-D", f"$fn={FN}", *defines, str(SCAD)],
+             "-D", f"$fn={FN}", *defines, str(scad)],
             check=True, capture_output=True, text=True,
         )
     except subprocess.CalledProcessError as e:
@@ -127,7 +177,21 @@ def run_case(name):
     return metrics
 
 
+def check_patch():
+    """Runs every case through the original and the patched file and compares volumes."""
+    import tempfile
+    patched = patched_scad()
+    with tempfile.TemporaryDirectory() as tmp:
+        for name in CASES:
+            a = run_case(name, SCAD, Path(tmp) / "a.stl")["volume"]
+            b = run_case(name, patched, Path(tmp) / "b.stl")["volume"]
+            status = "DIFFERS" if abs(a - b) > 1e-9 else "same"
+            print(f"CHECK {name}: original {a:.6f} patched {b:.6f} {status}", flush=True)
+
+
 def main():
+    if sys.argv[1:] == ["--check-patch"]:
+        return check_patch()
     names = sys.argv[1:] or list(CASES)
     data = json.loads(OUT.read_text()) if OUT.exists() else {}
     for name in names:

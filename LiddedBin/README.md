@@ -74,7 +74,7 @@ are not part of the public configuration; tests vary them through an internal in
 | `lid` | The lid, positioned as in OpenSCAD: its bottom is at z = -0.2 (lid_thickness less the vertical position tolerance). |
 | `bothClosed` | Bin and lid as two Cadova parts named "Bin" and "Lid", lid closed. |
 | `bothOpen` | The same, with the lid slid open. |
-| `binSlice` | A thin slice of a solid bin for print testing. |
+| `binSlice` | A thin slice of the bin at the lip for print testing, a hollow ring. |
 
 ## Build
 
@@ -118,7 +118,7 @@ the cases investigated). Rounding fixes that, and it adds a noise floor of rough
 is `lid_2x2x3_fit_sweep`, which `generate.py` keeps in full precision (`FULL_PRECISION`)
 because float32 rounding made the import drop a wedge there.
 
-The suite currently has 44 tests (`swift test --skip-update`), all passing. `ProductionTests`
+The suite currently has 45 tests (`swift test --skip-update`), all passing. `ProductionTests`
 build the default configuration with `cornerSegments == nil` and Cadova's default segmentation,
 as the exporter does, and check volume, bounds, symmetric difference and the closed bin/lid
 interference against the references; it also checks that `divMultiple` of 0 or less is clamped. The closed bin and
@@ -129,9 +129,13 @@ the lid placement there is checked by footprint, shift and overlap tests instead
 
 - Custom compartment pockets are dropped: the `custom` value of `div_pattern` and its text
   notice are not ported, because `Text` cannot use system fonts in the planned web customizer.
-- With zero compartment divisions (`divx = 0` and `divy = 0` with the grid pattern), OpenSCAD
-  intersects with an empty `children()` and cuts nothing, so the bin comes out solid. The port
-  reproduces this on purpose (no pockets means no interior cut).
+- A `divX` or `divY` of 0 (grid pattern) gives an open hollow bin with no dividers. The original
+  OpenSCAD model gives a solid bin there, because the interior cut intersects with an empty
+  `children()` and cuts nothing. The port deliberately deviates: with no pockets it cuts the whole
+  interior. `binSlice` is therefore a hollow ring. The references for these cases
+  (`bin_1x1x2_nogrips_div0`, `bin_slice_2x2x3`, `bin_slice_1x1x2_up`) come from a patched copy of
+  `lid-bin.scad` that `generate.py` writes to `Reference/generated/` (git-ignored); the original
+  file is not edited.
 - In the closed position the lid and the bin overlap by about 1.4 mm^3 (the lid tabs against the
   lip). This is present in the original design, not introduced by the port. The two parts are
   exported as separate bodies, so the assembly volume is the sum of both.

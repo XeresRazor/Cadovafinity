@@ -36,7 +36,8 @@ extension LiddedBinDesign {
         bin.placed(x: x, y: y, w: w, h: h, pocketInterior(pocketSize(xUnits: w, yUnits: h)))
     }
 
-    /// gf_cut_pockets (the custom pattern is not supported). Nil when no pockets are produced.
+    /// gf_cut_pockets (the custom pattern is not supported). Nil when no pockets are produced;
+    /// `binSolid` then cuts the whole interior (see there).
     func pockets() -> (any Geometry3D)? {
         let c = configuration
         var cuts: [any Geometry3D] = []
@@ -85,8 +86,13 @@ extension LiddedBinDesign {
     }
 
     /// gf_bin_solid. The interior cut is `intersection() { rounded_rect; children(); }` in
-    /// OpenSCAD. With no pockets, `children()` is empty, the intersection is empty and nothing
-    /// is cut, so `pockets == nil` leaves the floor block solid.
+    /// OpenSCAD. With no pockets, `children()` is empty there, the intersection is empty and
+    /// nothing is cut, so the original bin comes out solid.
+    ///
+    /// Deliberate deviation from OpenSCAD: `pockets == nil` cuts the whole interior (the
+    /// `interiorCut` rounded rectangle with its own corners), giving a hollow bin with one open
+    /// compartment. The solid result is an artifact of the empty-children quirk, not a design
+    /// intent.
     func binSolid(pockets: (any Geometry3D)?) -> any Geometry3D {
         Union {
             binWall()
@@ -121,10 +127,13 @@ extension LiddedBinDesign {
             baseGridInterior()
         }
         .subtracting {
+            let interiorCut = roundedRect(height: innerHeight, addSize: aa, radius: d.rBase * 2)
+                .translated(z: d.dWall)
             if let pockets {
-                roundedRect(height: innerHeight, addSize: aa, radius: d.rBase * 2)
-                    .translated(z: d.dWall)
-                    .intersecting { pockets }
+                interiorCut.intersecting { pockets }
+            } else {
+                // Deliberately differs from OpenSCAD, which cuts nothing here (see binSolid).
+                interiorCut
             }
         }
     }

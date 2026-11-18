@@ -18,7 +18,8 @@ extension LiddedBinDesign {
         case .bothOpen:
             return assembly(lidOffset: lidPosition(adjust: -(d.hLip * 2)))
         case .binSlice:
-            // pockets nil means no interior cut, so the slice starts from a solid bin.
+            // pockets nil cuts the whole interior (a deliberate deviation from OpenSCAD, whose
+            // empty-children quirk leaves a solid bin), so the slice is a hollow ring.
             let bh = storageHeight + d.hBase - fit.thickness * 2
             return binSolid(pockets: nil)
                 .translated(z: -bh)

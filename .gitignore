@@ -1,0 +1,8 @@
+.build/
+.superpowers/
+.DS_Store
+**/Reference/stl/
+__pycache__/
+Models/
+Customizer/
+.swiftpm/

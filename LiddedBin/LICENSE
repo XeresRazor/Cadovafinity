@@ -1,0 +1,28 @@
+LiddedBin license notice
+========================
+
+LiddedBin is a port of "Gridfinity Bins with Lids" by smkent (GitHub) /
+bulbasaur0 (Printables).
+
+The original design is licensed under the Creative Commons Attribution 4.0
+International License (CC BY 4.0):
+
+    https://creativecommons.org/licenses/by/4.0/
+
+Attribution line from the header of the original lid-bin.scad:
+
+    Gridfinity Bins with Lids
+    By smkent (GitHub) / bulbasaur0 (Printables)
+    Licensed under Creative Commons (4.0 International License) Attribution
+
+This package is a derivative of that work and contains changes:
+
+- It is written in Swift with Cadova instead of OpenSCAD.
+- The custom pockets pattern is dropped.
+- Setting dividers to 0 gives a hollow bin.
+- It adds a web customizer.
+
+This file is a notice, not the license text. The full legal text is at the
+link above. This notice does not cover the separate GridfinityRebuilt package
+or its upstream, gridfinity-rebuilt-openscad, whose license has not been
+confirmed.

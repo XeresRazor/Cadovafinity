@@ -136,6 +136,48 @@ internal contract with its customizer page (Cadova 1.3.0), not public API.
 `CustomizerCatalogTests` checks the catalog this way, so run `swift build` before `swift test`
 after changing `main.swift`; `swift test` does not rebuild the executable.
 
+## Publishing the customizer
+
+`swift package generate-customizer` builds a static web page from `lidded-bin`, with the model
+compiled to WebAssembly so it runs in the visitor's browser. The page offers three tabs, one for
+each exported model (`Bin`, `Lid` and `Bin and lid (open)`), each with the parameters listed
+above and a download button.
+
+Build it locally (needs the Swift 6.4.0 toolchain from swift.org, and network access to fetch
+dependencies):
+
+```
+cd LiddedBin
+swift package generate-customizer
+```
+
+This writes the page to `Customizer/`, which is git-ignored. The command was not run in the
+development sandbox (no network and no WebAssembly toolchain), so neither the build nor the
+page's behavior in a browser has been verified here.
+
+Preview it locally:
+
+```
+python3 -m http.server --directory Customizer 8000
+```
+
+Then open <http://localhost:8000>.
+
+To publish on GitHub Pages, push the repository to GitHub, open Settings, Pages, and set the
+source to GitHub Actions. The workflow `.github/workflows/customizer.yml` at the repository root
+builds `lidded-bin` from the `LiddedBin` folder with Cadova's `BuildCustomizer` action (pinned to
+1.3.0, the Cadova version in `Package.resolved`) and deploys it on every push to `main` or on a
+manual run. The sibling `../GridfinityRebuilt` dependency resolves because both packages are in
+the same checkout.
+
+The page shows the model's author and license (see "Attribution and license"), so it carries the
+CC BY 4.0 attribution to smkent / bulbasaur0.
+
+Limits of the WebAssembly build, from the Cadova guide: text can only use fonts included as
+resources, ICU locale data is missing (so `DateFormatter` and `NumberFormatter` stop the build),
+models build on a single thread and so are slower than native, and the browser gives a model
+less stack space. `LiddedBin` does not use text.
+
 ## Verify against OpenSCAD
 
 OpenSCAD is required (the scripts expect `/opt/homebrew/bin/openscad`).

@@ -6,8 +6,11 @@ public struct LiddedBinLimits: Sendable {
     public static let dividers = 0...12
     public static let divMultiple = 1.0...5.0
     public static let unitsHeight = 1.0...12.0
-    public static let internalHeight = 5.0...80.0
-    public static let externalHeight = 14.0...100.0
+    /// The millimeter height ranges follow from the maximum unit height, so all three height
+    /// styles allow the same tallest bin: a 12 unit bin is 84 mm tall outside, and its
+    /// internal height is that less the 5 mm base and the 2.2 mm lid allowance.
+    public static let internalHeight = 5.0...(unitsHeight.upperBound * 7 - 5 - 2.2)
+    public static let externalHeight = 14.0...(unitsHeight.upperBound * 7)
 
     public static func heightRange(for mode: HeightMode) -> ClosedRange<Double> {
         switch mode {

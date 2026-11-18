@@ -1,13 +1,21 @@
 import GridfinityRebuilt
 
 /// The plain values the customizer collects, with the defaults of `LiddedBinConfiguration`.
-public struct LiddedBinInput: Sendable {
+///
+/// `internalHeight` and `externalHeight` are placeholders: they only take effect when
+/// `heightStyle` selects them, and their defaults are the values the customizer starts those
+/// controls at.
+public struct LiddedBinInput: Sendable, Equatable {
+    /// The single source of the customizer's default values. Every `@Parameter` in `lidded-bin`
+    /// takes its default from here.
+    public static let defaults = LiddedBinInput()
+
     public var gridX = 2
     public var gridY = 2
     public var heightStyle: HeightStyle = .sevenMillimeterUnits
     public var unitsHeight = 3.0
     public var internalHeight = 20.0
-    public var externalHeight = 28.0
+    public var externalHeight = 30.0
     public var snapHeight = false
     public var internalBlockHeight = 0.0
     public var lipGrips: LipGrips = .xy

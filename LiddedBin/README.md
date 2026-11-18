@@ -15,7 +15,8 @@ The original is licensed under CC BY 4.0: <https://creativecommons.org/licenses/
 
 This package is a port with changes: it is written in Swift with Cadova instead of OpenSCAD, and
 the custom compartment pockets feature was dropped (see "Known differences"). Models exported by
-`lidded-bin` carry the metadata author "smkent (original design)" and license "CC BY 4.0".
+`lidded-bin` carry the metadata author "smkent (original design), ported by XeresRazor" and
+license "CC BY 4.0", and the metadata description names the original design and its license.
 
 ## Dependency
 
@@ -82,8 +83,58 @@ are not part of the public configuration; tests vary them through an internal in
 swift run lidded-bin
 ```
 
-This writes five 3MF files to `Models/` (`Bin`, `Lid`, `Bin and lid, closed`,
-`Bin and lid, open`, `Bin slice`). `Models/` is generated output and is git-ignored.
+This writes three 3MF files to `Models/`, all built with the default parameter values:
+`Bin`, `Lid` and `Bin and lid (open)` (the open assembly, with the bin and the lid as two
+separate parts). `Models/` is generated output and is git-ignored. The closed assembly and the
+bin slice are not exported; they remain available as `LiddedBinPart.bothClosed` and
+`LiddedBinPart.binSlice` in the library.
+
+## Customizer parameters
+
+`Sources/lidded-bin/main.swift` declares the parameters of the web customizer with Cadova's
+`@Parameter`, one tab per model. Every default comes from `LiddedBinInput.defaults` (the
+defaults of `LiddedBinConfiguration`), and every range from `LiddedBinLimits`. The model library
+itself does not use `@Parameter`.
+
+| Label | Values | Default | lid-bin.scad | Tabs |
+|---|---|---|---|---|
+| Grid width | 1...6 cells | 2 | `gridx` | all |
+| Grid depth | 1...6 cells | 2 | `gridy` | all |
+| Height style | 7 mm units, Internal height, Overall height | 7 mm units | `gridz_define` | all |
+| Height | 1...12 units, step 1 | 3 | `gridz` | all, when Height style is 7 mm units |
+| Internal height | 5...76.8 mm, step 1 | 20 | `gridz` | all, when Height style is Internal height |
+| Overall height | 14...84 mm, step 1 | 30 | `gridz` | all, when Height style is Overall height |
+| Snap to 7 mm | on, off | off | `enable_zsnap` | all, when Height style is Internal height or Overall height |
+| Internal block height | 0...80 mm | 0 | `height_internal` | all |
+| Lid direction | Up, Down, Left, Right | Left | `Lid_Orientation` | all |
+| Lip grips | None, Along X, Along Y, Along X and Y | Along X and Y | `Lip_Grips` | all |
+| Interior style | Minimal, Partially raised | Minimal | `Interior_Style` | Bin, Bin and lid (open) |
+| Compartments | Equal grid, Two sizes | Equal grid | `div_pattern` | Bin, Bin and lid (open) |
+| Dividers X | 0...12 | 6 | `divx` | Bin, Bin and lid (open) |
+| Dividers Y | 0...12 | 6 | `divy` | Bin, Bin and lid (open) |
+| Size multiple | 1...5, step 0.5 | 2 | `div_multiple` | Bin, Bin and lid (open), when Compartments is Two sizes |
+
+All parameters are declared in the project, so a value is shared between the tabs that show it.
+Cadova lists a parameter on a tab only when that model reads it, and on every tab when the
+project body reads it. The settings the lid depends on are read in the project body; the
+bin-only settings are read only inside the `Bin` and `Bin and lid (open)` models, since the lid
+geometry does not depend on them. The conditional parameters are read only while they apply.
+Internal block height is clamped to the bin's storage height by `validated()`.
+
+The catalog can be printed natively, the way Cadova's customizer page asks for it: write a
+request file and run the built executable with `CADOVA_CUSTOMIZER_REQUEST` naming it.
+
+```
+swift build
+echo '{"listParameters": "/tmp/catalog.json"}' > /tmp/request.json
+CADOVA_CUSTOMIZER_REQUEST=/tmp/request.json .build/debug/lidded-bin
+```
+
+A `"values"` object in the request, keyed by the parameter keys the catalog lists, gives the
+catalog for other choices (for example another Height style). This request format is Cadova's
+internal contract with its customizer page (Cadova 1.3.0), not public API.
+`CustomizerCatalogTests` checks the catalog this way, so run `swift build` before `swift test`
+after changing `main.swift`; `swift test` does not rebuild the executable.
 
 ## Verify against OpenSCAD
 
@@ -118,7 +169,7 @@ the cases investigated). Rounding fixes that, and it adds a noise floor of rough
 is `lid_2x2x3_fit_sweep`, which `generate.py` keeps in full precision (`FULL_PRECISION`)
 because float32 rounding made the import drop a wedge there.
 
-The suite currently has 45 tests (`swift test --skip-update`), all passing. `ProductionTests`
+The suite currently has 67 tests (`swift build --skip-update && swift test --skip-update`), all passing. `ProductionTests`
 build the default configuration with `cornerSegments == nil` and Cadova's default segmentation,
 as the exporter does, and check volume, bounds, symmetric difference and the closed bin/lid
 interference against the references; it also checks that `divMultiple` of 0 or less is clamped. The closed bin and
@@ -139,8 +190,3 @@ the lid placement there is checked by footprint, shift and overlap tests instead
 - In the closed position the lid and the bin overlap by about 1.4 mm^3 (the lid tabs against the
   lip). This is present in the original design, not introduced by the port. The two parts are
   exported as separate bodies, so the assembly volume is the sum of both.
-
-## Next step
-
-A web customizer. The model library deliberately does not use `@Parameter`; customizer
-parameters come in the next piece of work.

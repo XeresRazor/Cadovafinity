@@ -84,4 +84,24 @@ struct CustomizerInputTests {
         for s in InteriorStyle.allCases { #expect(InteriorStyle(parameterString: s.parameterString) == s) }
         for s in CompartmentPattern.allCases { #expect(CompartmentPattern(parameterString: s.parameterString) == s) }
     }
+
+    @Test func `the customizer defaults are a fresh input`() {
+        // main.swift takes every @Parameter default from `LiddedBinInput.defaults`;
+        // CustomizerCatalogTests checks the executable's catalog against it
+        #expect(LiddedBinInput.defaults == LiddedBinInput())
+        #expect(LiddedBinInput.defaults.internalHeight == 20)
+        #expect(LiddedBinInput.defaults.externalHeight == 30)
+    }
+
+    @Test func `default input builds the production bin and lid`() async throws {
+        // Default production volumes from docs/superpowers/notes/2026-11-customizer-build-times.md
+        let design = LiddedBinDesign(LiddedBinInput.defaults.configuration)
+        func volume(_ part: LiddedBinPart) async throws -> Double {
+            let g = design.geometry(for: part)
+            return try await ModelFileGenerator.evaluate { await $0.measurements(of: g).volume }
+        }
+        let bin = try await volume(.bin), lid = try await volume(.lid)
+        #expect(abs(bin - 40250.3) / 40250.3 < 1e-4, "bin \(bin)")
+        #expect(abs(lid - 6491.6) / 6491.6 < 1e-4, "lid \(lid)")
+    }
 }

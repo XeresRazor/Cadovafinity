@@ -5,13 +5,14 @@ public struct LiddedBinLimits: Sendable {
     public static let gridSize = 1...6
     public static let dividers = 0...12
     public static let divMultiple = 1.0...5.0
-    /// The side gap between the lid and the slot face, in mm.
-    public static let lidClearance = 0.05...0.6
+    /// The side gap between the lid and the slot face, in mm. A 0.4 mm nozzle cannot hold a smaller gap.
+    public static let lidClearance = 0.10...0.6
     /// The rise of the slot roof slope and the lid chamfer, in mm. 0.8 is the original 45 degree
-    /// roof; at 2.0 the roof tip is 0.7 mm below the lip's inner top chamfer.
-    public static let lidChamfer = 0.8...2.0
-    /// The overlap of the detent bump with the lid's edge while the lid slides, in mm.
-    public static let detentInterference = 0.05...0.6
+    /// roof; above 1.8 the thin wedge of the tongue tip barely adds printable height.
+    public static let lidChamfer = 0.8...1.8
+    /// The overlap of the detent bump with the lid's edge while the lid slides, in mm. Below 0.10
+    /// there is no detent, and above 0.40 the lid is too stiff because it cannot flex in its own plane.
+    public static let detentInterference = 0.10...0.40
     public static let unitsHeight = 1.0...12.0
     /// The millimeter height ranges follow from the maximum unit height, so all three height
     /// styles allow the same tallest bin: a 12 unit bin is 84 mm tall outside, and its

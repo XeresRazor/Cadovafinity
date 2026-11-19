@@ -78,20 +78,19 @@ public struct LiddedBinConfiguration: Sendable {
     // Lid fit. These are not settings of lid-bin.scad: they tune how the lid sits in the bin.
     // `openSCADOriginal` sets each of them to the value that reproduces lid-bin.scad.
 
-    /// The gap in mm between the lid's edge and the slot face on each side. Smaller values make
-    /// the lid fit closer. The original model's equivalent is 0.45.
+    /// The gap in mm between the lid and the slot on each side. Smaller is a tighter fit; the
+    /// original model used 0.45.
     public var lidClearance = 0.20
 
-    /// The rise in mm of the slot roof's slope, and with it the height of the matching chamfer on
-    /// the lid tongue's top outer edge, which stays parallel to the roof. The run is fixed by the
-    /// wall (0.7 mm), so a larger rise makes the roof steeper and the lid's chamfer taller. The
+    /// The rise in mm of the bin's slot roof, the slope that holds the lid down. The matching
+    /// chamfer on the lid's edge follows the same slope and comes out about 0.6 times as tall.
+    /// The run is fixed by the wall (0.7 mm), so a larger rise makes the roof steeper. The
     /// original model's equivalent is 0.8 (a 45 degree roof).
     public var lidChamfer = 1.4
 
-    /// How far in mm the detent bump on the bin's slot face overlaps the lid's edge as the lid
-    /// slides past it. The bump protrudes the lid clearance plus this from the slot face, so the
-    /// overlap does not change with the clearance. Larger values hold the lid more firmly. The
-    /// original model's equivalent is 0.15.
+    /// How far in mm the bump on the bin overlaps the lid's edge as the lid slides past it. More
+    /// is a firmer click and a stiffer lid. The bump protrudes the lid clearance plus this from
+    /// the slot face, so the overlap does not change with the clearance. The original model used 0.15.
     public var detentInterference = 0.25
 
     /// The detent shape. `.seated` is the catch the lid snaps into; `.original` is lid-bin.scad's

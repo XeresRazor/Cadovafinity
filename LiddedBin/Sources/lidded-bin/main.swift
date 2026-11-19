@@ -64,15 +64,15 @@ await Project(packageRelative: "Models") {
     var lipGrips = defaults.lipGrips
 
     @Parameter("Lid clearance", in: LiddedBinLimits.lidClearance, step: 0.05, unit: "mm",
-               description: "Side gap between the lid and the slot; smaller fits closer (original model: 0.45)")
+               description: "The gap between the lid and the slot on each side. Smaller is a tighter fit; the original model used 0.45.")
     var lidClearance = defaults.lidClearance
 
     @Parameter("Lid chamfer", in: LiddedBinLimits.lidChamfer, step: 0.1, unit: "mm",
-               description: "Height of the slot roof slope and the matching chamfer on the lid's top edge; larger is steeper and easier to see (original model: 0.8)")
+               description: "The rise of the bin's slot roof, the slope that holds the lid down. The lid's edge chamfer follows it, about 0.6 times as tall. Original: 0.8.")
     var lidChamfer = defaults.lidChamfer
 
     @Parameter("Detent interference", in: LiddedBinLimits.detentInterference, step: 0.05, unit: "mm",
-               description: "How far the catch bumps on the bin overlap the lid's edge as it slides; larger holds the lid more firmly (original model: 0.15)")
+               description: "How far the bump on the bin overlaps the lid's edge as the lid slides past it. More is a firmer click and a stiffer lid; the original model used 0.15.")
     var detentInterference = defaults.detentInterference
 
     // Bin only: declared here so that the Bin and open assembly tabs share them, read only in

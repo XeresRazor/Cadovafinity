@@ -194,6 +194,13 @@ struct LidFitTests {
         #expect(peaks[2] < 2.0)
     }
 
+    @Test func `a tighter clearance gives a taller tongue`() async throws {
+        let tight = try await roof(design { $0.lidClearance = 0.10; $0.lidChamfer = 1.4 }).peak
+        let normal = try await roof(chamferDesign(1.4)).peak
+        print("tongue peak at chamfer 1.4: clearance 0.10 \(tight), clearance 0.20 \(normal)")
+        #expect(tight > normal)
+    }
+
     @Test func `the default lid chamfer still fits`() async throws {
         let d = LiddedBinDesign({ var c = LiddedBinConfiguration(); c.cornerSegments = 16; return c }())
         let volume = try await interference(d)

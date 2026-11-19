@@ -51,7 +51,10 @@ variables in `lid-bin.scad`.
 | `divX` | `divx` | 6 |
 | `divY` | `divy` | 6 |
 | `divMultiple` | `div_multiple` (clamped to 1...5) | 2 |
-| `lidClearance` | side gap between lid and slot (`0.5 + 3 * lid_hfit_tolerance` inset, 0.45 per side) | 0.20 (clamped to 0.05...0.6) |
+| `lidClearance` | side gap between lid and slot (`0.5 + 3 * lid_hfit_tolerance` inset, 0.45 per side) | 0.20 (original-equivalent 0.45; clamped to 0.10...0.6) |
+| `lidChamfer` | rise of the slot roof, the slope that holds the lid down; the lid's edge chamfer follows it, about 0.6 times as tall | 1.4 (original-equivalent 0.8; clamped to 0.8...1.8) |
+| `detentInterference` | how far the bump on the bin overlaps the lid's edge as the lid slides past it | 0.25 (original-equivalent 0.15; clamped to 0.10...0.40) |
+| `detentStyle` (`seated`, `original`; internal preset field, not in the customizer) | `seated` is the catch the lid snaps into; `original` is lid-bin.scad's round bump | `seated` (`original` in the original-equivalent preset) |
 | `cornerSegments` | none | nil |
 
 `cornerSegments` exists only to force the same corner tessellation as an OpenSCAD reference
@@ -84,7 +87,10 @@ original inset `0.5 + 3 * lid_hfit_tolerance` fixes a gap of 0.45 mm per side.
   original 0.229 mm perpendicular gap between the tongue's chamfer and the slot roof, and smaller
   ones tighten it (0.129 mm at 0.10). The bin depends on it through the detent bumps, whose
   protrusion is `lidClearance + detentInterference`.
-- Customizer: "Lid clearance" (0.05...0.6 mm, step 0.05) on all three tabs.
+- Customizer: "Lid clearance" (0.10...0.6 mm, step 0.05) on all three tabs.
+- The lid tongue peak depends on the clearance: a tighter clearance gives a taller tongue. With
+  a lid chamfer of 1.4 the peak is 1.11 mm above the plate top at a clearance of 0.10 and 0.89 mm
+  at 0.20.
 
 `lidChamfer` (mm) is the rise of the slot roof: the slope from the slot face, at the top of the
 lid plate, up and inward to where it meets the inside of the wall. The lid tongue's top outer
@@ -92,16 +98,15 @@ edge has a chamfer parallel to the roof, so it follows the same slope.
 
 - Default: 1.4 mm. Original-equivalent value: 0.8 mm (the original 45 degree roof, which rises
   0.798 mm over a run of 0.798 mm and ends on the 45 degree underside of the stacking lip).
-  Range: 0.8...2.0 mm.
+  Range: 0.8...1.8 mm.
 - Effect: the run of a steeper roof is fixed by the wall. It ends on the stacking lip's vertical
   inner face, 0.7 mm in from the slot face (the inner face is not moved, since bins above stack
-  on it), so the slope is `lidChamfer / 0.7`: about 63 degrees at 1.4 and 71 degrees at 2.0.
+  on it), so the slope is `lidChamfer / 0.7`: about 63 degrees at 1.4 and 69 degrees at 1.8.
   Between 0.8 and 0.896 (where the roof first reaches the vertical face) the slope is
-  interpolated, which keeps the rise within 0.003 mm of the setting. At 2.0 the roof tip is
-  0.7 mm below the lip's inner top chamfer. The tongue's chamfer keeps a perpendicular gap of
+  interpolated, which keeps the rise within 0.003 mm of the setting. The tongue's chamfer keeps a perpendicular gap of
   0.229 mm (at the default clearance) to the roof for every rise, and the tongue's peak above
-  the plate grows from 0.64 mm (0.8) to 0.89 mm (1.4) and 1.30 mm (2.0).
-- Customizer: "Lid chamfer" (0.8...2.0 mm, step 0.1) on all three tabs, since both the bin and
+  the plate grows from 0.64 mm (0.8) to 0.89 mm (1.4).
+- Customizer: "Lid chamfer" (0.8...1.8 mm, step 0.1) on all three tabs, since both the bin and
   the lid carry the slope.
 
 `detentInterference` (mm) is how far the detent bumps on the bin overlap the lid's plate edge as
@@ -109,7 +114,7 @@ the lid slides past them. There is one bump on each side wall at the closed end,
 notch in each side of the lid.
 
 - Default: 0.25 mm. Original-equivalent value: 0.15 mm (the original bump protrudes 0.6 mm from
-  the slot face against a 0.45 mm side gap). Range: 0.05...0.6 mm.
+  the slot face against a 0.45 mm side gap). Range: 0.10...0.40 mm.
 - Effect: the bump protrudes `lidClearance + detentInterference` from the slot face (0.45 mm by
   default), so the overlap stays the same when the clearance changes. In plan view the bump is
   a trapezoid: a 30 degree ramp (to the slide direction) on the side toward the open end, a
@@ -128,7 +133,7 @@ notch in each side of the lid.
 - The bumps sit where the lid plate's edge starts to curve into its corner, so while the lid
   slides the deepest overlap is 0.24 mm rather than the full 0.25 (measured on the straight
   edge), and the overlap ends about 1.85 mm after the lid starts to open.
-- Customizer: "Detent interference" (0.05...0.6 mm, step 0.05) on all three tabs, since the bin
+- Customizer: "Detent interference" (0.10...0.40 mm, step 0.05) on all three tabs, since the bin
   carries the bumps and the lid the notches.
 
 ## Parts
@@ -175,9 +180,9 @@ itself does not use `@Parameter`.
 | Internal block height | 0...80 mm | 0 | `height_internal` | all |
 | Lid direction | Up, Down, Left, Right | Left | `Lid_Orientation` | all |
 | Lip grips | None, Along X, Along Y, Along X and Y | Along X and Y | `Lip_Grips` | all |
-| Lid clearance | 0.05...0.6 mm, step 0.05 | 0.20 | side gap of the lid (original value 0.45) | all |
-| Lid chamfer | 0.8...2.0 mm, step 0.1 | 1.4 | rise of the slot roof and the lid chamfer (original value 0.8) | all |
-| Detent interference | 0.05...0.6 mm, step 0.05 | 0.25 | overlap of the detent bumps with the lid edge (original value 0.15) | all |
+| Lid clearance | 0.10...0.6 mm, step 0.05 | 0.20 | gap between the lid and the slot on each side; smaller is tighter (original value 0.45) | all |
+| Lid chamfer | 0.8...1.8 mm, step 0.1 | 1.4 | rise of the slot roof that holds the lid down; the lid's chamfer follows it, about 0.6 times as tall (original value 0.8) | all |
+| Detent interference | 0.10...0.40 mm, step 0.05 | 0.25 | overlap of the bump with the lid's edge; more is a firmer click and a stiffer lid (original value 0.15) | all |
 | Interior style | Minimal, Partially raised | Minimal | `Interior_Style` | Bin, Bin and lid (open) |
 | Compartments | Equal grid, Two sizes | Equal grid | `div_pattern` | Bin, Bin and lid (open) |
 | Dividers X | 0...12 | 6 | `divx` | Bin, Bin and lid (open) |

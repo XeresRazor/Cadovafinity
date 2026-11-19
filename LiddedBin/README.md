@@ -21,11 +21,9 @@ license "CC BY 4.0", and the metadata description names the original design and 
 ## Dependency
 
 The bin body is built on `../GridfinityRebuilt`, a port of
-[gridfinity-rebuilt-openscad](https://github.com/kennetek/gridfinity-rebuilt-openscad). The
-OpenSCAD copy next to `lid-bin.scad` (`gridfinity-rebuilt-openscad/`) contains only `.scad` files
-and has no license file, and its headers carry no license text. I could not confirm its license
-from that copy. It is commonly described as MIT, but the license should be confirmed against the
-upstream repository before this package is published or redistributed.
+[gridfinity-rebuilt-openscad](https://github.com/kennetek/gridfinity-rebuilt-openscad), which is
+released under the MIT License (stated on its GitHub page). The OpenSCAD copy next to
+`lid-bin.scad` contains only `.scad` files, so the license text is not in that copy.
 
 `LiddedBin` also depends on [Cadova](https://github.com/tomasf/Cadova) (1.3.0 or later).
 `d_wall` is 1.6 mm throughout, as `lid-bin.scad` sets it, so the design uses

@@ -23,6 +23,6 @@ This package is a derivative of that work and contains changes:
 - It adds a web customizer.
 
 This file is a notice, not the license text. The full legal text is at the
-link above. This notice does not cover the separate GridfinityRebuilt package
-or its upstream, gridfinity-rebuilt-openscad, whose license has not been
-confirmed.
+link above. This notice does not cover the separate GridfinityRebuilt package,
+a port of gridfinity-rebuilt-openscad, which is released under the MIT
+License.

@@ -4,9 +4,11 @@ A Swift/Cadova port of parts of
 [gridfinity-rebuilt-openscad](https://github.com/kennetek/gridfinity-rebuilt-openscad). It is
 verified against OpenSCAD output. `../LiddedBin` is its first consumer.
 
-License: the OpenSCAD copy used as the porting source has no license file and no license text
-in its headers. The upstream project is commonly described as MIT, but that should be confirmed
-before this package is published.
+License: this package is a port of
+[gridfinity-rebuilt-openscad](https://github.com/kennetek/gridfinity-rebuilt-openscad), which is
+released under the MIT License (stated on its GitHub page). The MIT License requires the upstream
+copyright notice and permission text to accompany substantial portions of the work, so this
+package's license file must carry them.
 
 ## Scope
 

@@ -35,6 +35,17 @@ struct ValidationTests {
         #expect(c.validated().divMultiple == LiddedBinLimits.divMultiple.upperBound)
     }
 
+    @Test func `lid clearance is clamped`() {
+        var c = LiddedBinConfiguration()
+        c.lidClearance = 0
+        #expect(c.validated().lidClearance == LiddedBinLimits.lidClearance.lowerBound)
+        c.lidClearance = 3
+        #expect(c.validated().lidClearance == LiddedBinLimits.lidClearance.upperBound)
+        c.lidClearance = 0.3
+        #expect(c.validated().lidClearance == 0.3)
+        #expect(LiddedBinConfiguration.openSCADOriginal.validated().lidClearance == 0.45)
+    }
+
     @Test func `height is clamped to the range of its mode`() {
         var c = LiddedBinConfiguration()
         c.heightMode = .internalMillimeters

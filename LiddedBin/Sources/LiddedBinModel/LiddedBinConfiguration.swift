@@ -64,5 +64,21 @@ public struct LiddedBinConfiguration: Sendable {
     /// to match OpenSCAD, not a design parameter, and must not be exposed in the customizer.
     public var cornerSegments: Int? = nil
 
+    // Lid fit. These are not settings of lid-bin.scad: they tune how the lid sits in the bin.
+    // `openSCADOriginal` sets each of them to the value that reproduces lid-bin.scad.
+
+    /// The gap in mm between the lid's edge and the slot face on each side. Smaller values make
+    /// the lid fit closer. The original model's equivalent is 0.45.
+    public var lidClearance = 0.20
+
     public init() {}
+
+    /// The configuration with every lid fit field set to the value that reproduces lid-bin.scad
+    /// (currently `lidClearance = 0.45`). The OpenSCAD reference tests start from this. Later fit
+    /// controls extend it here.
+    public static var openSCADOriginal: LiddedBinConfiguration {
+        var c = LiddedBinConfiguration()
+        c.lidClearance = 0.45
+        return c
+    }
 }

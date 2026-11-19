@@ -9,7 +9,7 @@ import GridfinityTestSupport
 /// Sources/lidded-bin/main.swift, with `cornerSegments == nil`.
 struct ProductionTests {
     let refs = ReferenceSet.containing()
-    let production = LiddedBinDesign(LiddedBinConfiguration())
+    let production = LiddedBinDesign(.openSCADOriginal)
 
     func produce(_ g: any Geometry3D) async throws -> Metrics {
         try await ModelFileGenerator.evaluate { evaluator in

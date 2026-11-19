@@ -63,6 +63,10 @@ await Project(packageRelative: "Models") {
     @Parameter("Lip grips", description: "Finger grips cut into the lid lip (Lip_Grips)")
     var lipGrips = defaults.lipGrips
 
+    @Parameter("Lid clearance", in: LiddedBinLimits.lidClearance, step: 0.05, unit: "mm",
+               description: "Side gap between the lid and the slot; smaller fits closer (original model: 0.45)")
+    var lidClearance = defaults.lidClearance
+
     // Bin only: declared here so that the Bin and open assembly tabs share them, read only in
     // those two models
 
@@ -132,13 +136,20 @@ await Project(packageRelative: "Models") {
         return input
     }
 
+    // The clearance is read only where the lid is built, so the Bin tab does not list it
+    let withClearance: @Sendable (LiddedBinInput, Double) -> LiddedBinInput = { input, clearance in
+        var input = input
+        input.lidClearance = clearance
+        return input
+    }
+
     await Model("Bin") {
         LiddedBinDesign(binInput().configuration).geometry(for: .bin)
     }
     await Model("Lid") {
-        LiddedBinDesign(lidInput.configuration).geometry(for: .lid)
+        LiddedBinDesign(withClearance(lidInput, lidClearance).configuration).geometry(for: .lid)
     }
     await Model("Bin and lid (open)") {
-        LiddedBinDesign(binInput().configuration).geometry(for: .bothOpen)
+        LiddedBinDesign(withClearance(binInput(), lidClearance).configuration).geometry(for: .bothOpen)
     }
 }

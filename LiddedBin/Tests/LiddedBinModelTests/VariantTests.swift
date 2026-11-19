@@ -79,7 +79,7 @@ struct VariantTests {
         return f
     }
     private func sweepDesign() -> LiddedBinDesign {
-        var c = LiddedBinConfiguration()
+        var c = LiddedBinConfiguration.openSCADOriginal
         c.cornerSegments = 16; c.divX = 2; c.divY = 2; c.lipGrips = .none
         return LiddedBinDesign(c, fit: sweepFit)
     }

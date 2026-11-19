@@ -2,9 +2,9 @@ import Cadova
 import GridfinityRebuilt
 @testable import LiddedBinModel
 
-/// A design with `cornerSegments = 16`, as used by every reference test.
+/// A design with the original (OpenSCAD) lid fit and `cornerSegments = 16`, as used by every reference test.
 func design(_ edit: (inout LiddedBinConfiguration) -> Void = { _ in }) -> LiddedBinDesign {
-    var c = LiddedBinConfiguration()
+    var c = LiddedBinConfiguration.openSCADOriginal
     c.cornerSegments = 16
     edit(&c)
     return LiddedBinDesign(c)

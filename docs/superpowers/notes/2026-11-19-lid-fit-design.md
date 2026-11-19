@@ -25,7 +25,7 @@ Cross-sections of the 2x2x3 bin and lid (lid in the closed position), taken acro
 | Bump overlap with the lid edge as it slides past | about 0.15 |
 | Lid notch recess at the bump | face at y = 39.5, so 0.45 deeper than the bump face |
 
-The side gap is `lid_hfit_tolerance` (1.1 against a 1.2 wall thickness, 0.1) plus the 0.30 offset in `gf_bin_lid` (`offset(delta = 0.30)`). With the notch 0.45 deeper than the bump, a closed lid does not touch the bump, so nothing catches it.
+The side gap at the plate edge comes from the plate inset `sz = 0.5 + 3 * lid_hfit_tolerance` (3.8 mm, against the 1.2 wall thickness: `0.5 + 2 * 1.2 + 2 * 0.45`). The 0.30 offset in `gf_bin_lid` (`offset(delta = 0.30)`) only moves the tongue's chamfer against the slot roof (perpendicular gap about 0.229 mm). With the notch 0.45 deeper than the bump, a closed lid does not touch the bump, so nothing catches it.
 
 ## Design
 
@@ -33,7 +33,7 @@ Three controls in a "Lid fit" group. Each has an original-equivalent value that 
 
 | Control | New default | Original equivalent | Effect |
 |---|---|---|---|
-| Lid clearance (mm) | 0.15 | 0.30 | The offset around the lid tongue. Side gap about 0.25 per side. |
+| Lid clearance (mm) | 0.20 | 0.45 | The gap between the lid's plate edge and the slot face, on each side. The plate and tongue inset is `0.5 + 2 * wall + 2 * clearance`. The tongue offset is derived as `min(0.30, clearance + 0.10)`, so the chamfer keeps its original 0.229 mm perpendicular gap to the slot roof for clearances of 0.20 and above and tightens with smaller values (0.129 mm at 0.10). |
 | Lid chamfer (mm) | 1.0 | about 0.5 (original geometry) | 45 degree chamfer on the lid tongue's top outer edge and the matching slot roof. The overhang is thickened inward under the roof to make room. |
 | Detent interference (mm) | 0.25 | 0.15 | Overlap of the bump with the lid edge. Bump protrusion = side gap + interference. |
 
@@ -43,6 +43,6 @@ Where the controls appear: Lid clearance on the Lid tab and the open assembly; L
 
 ## Verification
 
-OpenSCAD reference tests use the original-equivalent preset. New behavior has no reference and is checked by cross-section measurements (ray casting) of side gap, tongue height, chamfer size, bump interference and the notch seat, plus rendered cross-section images (`LiddedBin/Reference/tools/render_section.py`).
+OpenSCAD reference tests use the original-equivalent preset. New behavior has no reference and is checked by cross-section measurements (ray casting) of side gap (the plate edge gap equals the clearance, within 0.01 mm), tongue height, chamfer size, bump interference and the notch seat, plus rendered cross-section images (`LiddedBin/Reference/tools/render_section.py`).
 
 The feel of the fit cannot be tested without a print. The defaults are starting values to tune on the customizer page.

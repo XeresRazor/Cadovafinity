@@ -5,7 +5,7 @@ extension LiddedBinDesign {
     /// gf_bin_lid, in the bin's own coordinates (the lid sits closed on the bin).
     func lidBody() -> any Geometry3D {
         let dh = storageHeight
-        let sz = 0.5 + fit.hFitTolerance * 3
+        let sz = fit.plateInset
         let plateZ = dh + d.hBase - fit.thickness - fit.vPosTolerance
         let segments = configuration.cornerSegments
 
@@ -22,7 +22,7 @@ extension LiddedBinDesign {
             .subtracting {
                 Rectangle([d.rBase, dh - fit.vPosTolerance])
                 Rectangle([d.rBase, dh + d.hLip]).translated(x: d.rBase)
-                lidLipWallProfile(lid: true).offset(amount: 0.30, style: .miter)
+                lidLipWallProfile(lid: true).offset(amount: fit.lipClearance, style: .miter)
             }
         let plate = Union {
             roundedRect(height: fit.thickness, addSize: -sz, radius: d.rFo1 - sz)

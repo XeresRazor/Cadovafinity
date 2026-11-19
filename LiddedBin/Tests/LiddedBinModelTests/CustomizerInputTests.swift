@@ -13,6 +13,7 @@ struct CustomizerInputTests {
         #expect(c.interiorStyle == d.interiorStyle && c.compartmentPattern == d.compartmentPattern)
         #expect(c.divX == d.divX && c.divY == d.divY && c.divMultiple == d.divMultiple)
         #expect(c.internalHeightOverride == d.internalHeightOverride)
+        #expect(c.lidClearance == d.lidClearance && d.lidClearance == 0.20)
         #expect(c.cornerSegments == nil)
     }
 
@@ -95,7 +96,9 @@ struct CustomizerInputTests {
 
     @Test func `default input builds the production bin and lid`() async throws {
         // Default production volumes from docs/superpowers/notes/2026-11-customizer-build-times.md
-        let design = LiddedBinDesign(LiddedBinInput.defaults.configuration)
+        var input = LiddedBinInput.defaults
+        input.lidClearance = LiddedBinConfiguration.openSCADOriginal.lidClearance
+        let design = LiddedBinDesign(input.configuration)
         func volume(_ part: LiddedBinPart) async throws -> Double {
             let g = design.geometry(for: part)
             return try await ModelFileGenerator.evaluate { await $0.measurements(of: g).volume }

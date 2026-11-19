@@ -7,7 +7,11 @@ public struct LiddedBinDesign: Sendable {
     let fit: LidFit
 
     public init(_ configuration: LiddedBinConfiguration) {
-        self.init(configuration, fit: LidFit())
+        // The tongue offset follows the side gap: the default gap keeps the original 0.30 offset,
+        // and a tighter gap tightens the chamfer against the slot roof with it.
+        var fit = LidFit(sideClearance: configuration.lidClearance)
+        fit.lipClearance = min(0.30, configuration.lidClearance + 0.10)
+        self.init(configuration, fit: fit)
     }
 
     /// Internal: lets tests vary the lid fit constants.

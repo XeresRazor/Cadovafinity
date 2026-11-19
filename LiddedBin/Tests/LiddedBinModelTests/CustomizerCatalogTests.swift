@@ -121,7 +121,11 @@ struct CustomizerCatalogTests {
             #expect(!lid.labels.contains(label), "\(label)")
         }
         #expect(lid.labels == ["Grid width", "Grid depth", "Height style", "Height",
-                               "Internal block height", "Lid direction", "Lip grips"])
+                               "Internal block height", "Lid direction", "Lip grips", "Lid clearance"])
+        // The Bin tab does not depend on the clearance; the Lid tab and the open assembly do
+        #expect(!bin.labels.contains("Lid clearance"))
+        #expect(open.labels.contains("Lid clearance"))
+        #expect(lid.parameter("Lid clearance")?.key == open.parameter("Lid clearance")?.key)
         // Bin and open assembly share one declaration of each bin-only parameter
         for label in Self.binOnly {
             #expect(bin.parameter(label)?.key == open.parameter(label)?.key)
@@ -199,7 +203,8 @@ struct CustomizerCatalogTests {
         #expect(number("Dividers X") == Double(d.divX))
         #expect(number("Dividers Y") == Double(d.divY))
         #expect(number("Size multiple") == d.divMultiple)
-        #expect(all.count == 15)
+        #expect(number("Lid clearance") == d.lidClearance)
+        #expect(all.count == 16)
 
         func range(_ label: String) -> ClosedRange<Double>? {
             guard let p = all[label], let lo = p.minimum, let hi = p.maximum else { return nil }
@@ -214,6 +219,8 @@ struct CustomizerCatalogTests {
         #expect(range("Dividers X") == doubles(LiddedBinLimits.dividers))
         #expect(range("Dividers Y") == doubles(LiddedBinLimits.dividers))
         #expect(range("Size multiple") == LiddedBinLimits.divMultiple)
+        #expect(range("Lid clearance") == LiddedBinLimits.lidClearance)
+        #expect(all["Lid clearance"]?.step == 0.05)
         #expect(all["Size multiple"]?.step == 0.5)
     }
 }

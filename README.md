@@ -1,0 +1,59 @@
+# Cadovafinity
+
+A Gridfinity bin with a sliding lid that you can adjust in a web page, built with Swift and [Cadova](https://cadova.org).
+
+**Web customizer: <https://xeresrazor.github.io/Cadovafinity/>**
+
+Pick the grid size, height, dividers, finger grips and lid direction, tune the lid fit, watch the 3D preview, and download the bin, the lid or both as 3MF files for your slicer.
+
+The design is a port of smkent's OpenSCAD model "Gridfinity Bins with Lids" to Swift. The geometry is checked against the original OpenSCAD output, with a few deliberate changes listed below.
+
+## What you can adjust
+
+- Grid width and depth (1 to 6 cells), and the height as 7 mm units, internal height or overall height.
+- Compartments: an equal grid of dividers, or two compartment sizes. Zero dividers gives one open compartment.
+- Lip grips (none, along X, along Y, both), lid direction (four ways) and the interior style.
+- Lid fit, in three controls with their original-model equivalents in the page and the READMEs:
+  - **Lid clearance:** the gap between the lid and the slot on each side (default 0.20 mm).
+  - **Lid chamfer:** the rise of the slot roof, and the lid's edge chamfer that follows it (default 1.4 mm).
+  - **Detent interference:** how firmly the bump on the bin catches the lid (default 0.25 mm).
+
+The fit defaults are starting values chosen from measurements of the model, then checked in cross-section. How the lid feels depends on your printer, so expect to adjust them after a test print.
+
+## Differences from the original
+
+- A bin with no dividers (`divx` or `divy` set to 0) is hollow. The original model leaves it solid.
+- The lid fit is tighter, the slot roof and lid chamfer are larger, and the detent is a seated catch. The `openSCADOriginal` preset in the code reproduces the original geometry exactly, and the reference tests use it.
+- The custom compartment pattern, which needs editing the source, is not included. The web page cannot offer it.
+
+## Repository
+
+| Folder | Contents |
+|---|---|
+| [`LiddedBin/`](LiddedBin/README.md) | The lidded bin: model library, the `lidded-bin` executable that defines the customizer, and the OpenSCAD reference generator. 87 tests. |
+| [`GridfinityRebuilt/`](GridfinityRebuilt/README.md) | A Swift/Cadova port of the core of [gridfinity-rebuilt-openscad](https://github.com/kennetek/gridfinity-rebuilt-openscad), plus `GridfinityTestSupport`, the helpers that compare geometry with OpenSCAD output. 33 tests. |
+| `docs/superpowers/` | Design notes, specs and implementation plans. |
+| `.github/workflows/customizer.yml` | Builds the customizer and publishes it to GitHub Pages on every push to `main`. |
+
+## Build and test
+
+Requires macOS 15 and Swift 6.3 (the packages use `swift-tools-version: 6.3`).
+
+```
+cd LiddedBin
+swift build
+swift run lidded-bin        # writes the Bin, Lid and open assembly 3MF files to Models/
+swift test
+```
+
+Tests that compare against OpenSCAD need [OpenSCAD](https://openscad.org) installed. Generate the reference meshes once with `python3 -I Reference/generate.py` in `LiddedBin` (and in `GridfinityRebuilt`); the generated STL files are git-ignored. See each package's README for details.
+
+To build the customizer page locally you need the Swift 6.4.0 toolchain from swift.org, then `swift package generate-customizer` in `LiddedBin`. The GitHub workflow does this on every push to `main`.
+
+## Licenses and credits
+
+- **LiddedBin** is a port of "Gridfinity Bins with Lids" by smkent (GitHub) / bulbasaur0 (Printables), licensed under [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/). See `LiddedBin/LICENSE` for the attribution and the list of changes.
+- **GridfinityRebuilt** is MIT licensed, and its `LICENSE` carries the notices of gridfinity-rebuilt-openscad (Kenneth Hodson) and of Gridfinity (Zachary Freedman and Voidstar Lab LLC).
+- [Cadova](https://github.com/tomasf/Cadova) and its dependencies are listed on the customizer page under its licenses link.
+
+Ported by David Green.

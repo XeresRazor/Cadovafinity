@@ -6,9 +6,9 @@ verified against OpenSCAD output. `../LiddedBin` is its first consumer.
 
 License: this package is a port of
 [gridfinity-rebuilt-openscad](https://github.com/kennetek/gridfinity-rebuilt-openscad), which is
-released under the MIT License (stated on its GitHub page). The MIT License requires the upstream
-copyright notice and permission text to accompany substantial portions of the work, so this
-package's license file must carry them.
+released under the MIT License. This package is also MIT licensed (see `LICENSE`), and that file
+carries the upstream copyright notice and permission text that the MIT License requires, plus
+the notice of the Gridfinity system the upstream project is based on.
 
 ## Scope
 

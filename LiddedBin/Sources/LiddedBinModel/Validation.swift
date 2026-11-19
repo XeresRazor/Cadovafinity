@@ -5,8 +5,11 @@ public struct LiddedBinLimits: Sendable {
     public static let gridSize = 1...6
     public static let dividers = 0...12
     public static let divMultiple = 1.0...5.0
-    /// The gap-tightening offset around the lid tongue, in mm.
+    /// The side gap between the lid and the slot face, in mm.
     public static let lidClearance = 0.05...0.6
+    /// The rise of the slot roof slope and the lid chamfer, in mm. 0.8 is the original 45 degree
+    /// roof; at 2.0 the roof tip is 0.7 mm below the lip's inner top chamfer.
+    public static let lidChamfer = 0.8...2.0
     public static let unitsHeight = 1.0...12.0
     /// The millimeter height ranges follow from the maximum unit height, so all three height
     /// styles allow the same tallest bin: a 12 unit bin is 84 mm tall outside, and its
@@ -33,6 +36,7 @@ public extension LiddedBinConfiguration {
         c.divY = min(max(c.divY, LiddedBinLimits.dividers.lowerBound), LiddedBinLimits.dividers.upperBound)
         c.divMultiple = min(max(c.divMultiple, LiddedBinLimits.divMultiple.lowerBound), LiddedBinLimits.divMultiple.upperBound)
         c.lidClearance = min(max(c.lidClearance, LiddedBinLimits.lidClearance.lowerBound), LiddedBinLimits.lidClearance.upperBound)
+        c.lidChamfer = min(max(c.lidChamfer, LiddedBinLimits.lidChamfer.lowerBound), LiddedBinLimits.lidChamfer.upperBound)
         let heights = LiddedBinLimits.heightRange(for: c.heightMode)
         c.gridZ = min(max(c.gridZ, heights.lowerBound), heights.upperBound)
         let storage = LiddedBinDesign(c).storageHeight

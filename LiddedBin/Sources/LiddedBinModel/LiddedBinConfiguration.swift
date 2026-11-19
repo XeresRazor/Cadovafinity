@@ -71,14 +71,20 @@ public struct LiddedBinConfiguration: Sendable {
     /// the lid fit closer. The original model's equivalent is 0.45.
     public var lidClearance = 0.20
 
+    /// The rise in mm of the slot roof's slope, and with it the height of the matching chamfer on
+    /// the lid tongue's top outer edge, which stays parallel to the roof. The run is fixed by the
+    /// wall (0.7 mm), so a larger rise makes the roof steeper and the lid's chamfer taller. The
+    /// original model's equivalent is 0.8 (a 45 degree roof).
+    public var lidChamfer = 1.4
+
     public init() {}
 
     /// The configuration with every lid fit field set to the value that reproduces lid-bin.scad
-    /// (currently `lidClearance = 0.45`). The OpenSCAD reference tests start from this. Later fit
-    /// controls extend it here.
+    /// (`lidClearance = 0.45`, `lidChamfer = 0.8`). The OpenSCAD reference tests start from this.
     public static var openSCADOriginal: LiddedBinConfiguration {
         var c = LiddedBinConfiguration()
         c.lidClearance = 0.45
+        c.lidChamfer = 0.8
         return c
     }
 }

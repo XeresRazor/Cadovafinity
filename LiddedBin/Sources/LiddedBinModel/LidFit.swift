@@ -15,6 +15,12 @@ struct LidFit: Sendable {
     /// the value that reproduces the original model for the current `hFitTolerance` and
     /// `wallThickness` (the original `sz = 0.5 + 3 * lid_hfit_tolerance` inset).
     var sideClearanceOverride: Double?
+    /// The rise in mm of the slot roof slope over its run, which the lid tongue's chamfer
+    /// follows. `originalChamfer` (0.8) gives the original 45 degree roof.
+    var chamfer = LidFit.originalChamfer
+
+    /// The roof rise that reproduces the original 45 degree slot roof of lid-bin.scad.
+    static let originalChamfer = 0.8
 
     init(sideClearance: Double? = nil) {
         sideClearanceOverride = sideClearance

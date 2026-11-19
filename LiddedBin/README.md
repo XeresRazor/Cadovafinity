@@ -67,23 +67,41 @@ are not part of the public configuration; tests vary them through an internal in
 
 ## Lid fit
 
-`lidClearance` (mm) is the gap between the lid's edge and the slot face on each side. It is the
-one lid fit control of this port that lid-bin.scad does not expose: the original inset
-`0.5 + 3 * lid_hfit_tolerance` fixes a gap of 0.45 mm per side.
+Two lid fit controls of this port are not exposed by lid-bin.scad. Each has an
+original-equivalent value. `LiddedBinConfiguration.openSCADOriginal` is a configuration with
+every lid fit field set to that value (`lidClearance = 0.45`, `lidChamfer = 0.8`), and the
+OpenSCAD reference tests build their designs from it.
 
-- Default: 0.20 mm.
-- Original-equivalent value: 0.45 mm. `LiddedBinConfiguration.openSCADOriginal` is a
-  configuration with every lid fit field set to the value that reproduces lid-bin.scad (now only
-  `lidClearance = 0.45`). The OpenSCAD reference tests build their designs from it, and further
-  fit controls extend it.
+`lidClearance` (mm) is the gap between the lid's edge and the slot face on each side. The
+original inset `0.5 + 3 * lid_hfit_tolerance` fixes a gap of 0.45 mm per side.
+
+- Default: 0.20 mm. Original-equivalent value: 0.45 mm.
 - Effect: the plate and tongue are inset from the block outline by
   `0.5 + 2 * lid_wall_thickness + 2 * lidClearance`, so the vertical plate edge sits exactly
   `lidClearance` from the slot face. The offset around the tongue (`offset(delta = 0.30)` in the
   original) is derived as `min(0.30, lidClearance + 0.10)`: clearances of 0.20 and above keep the
-  original 0.229 mm perpendicular gap between the tongue's 45 degree chamfer and the slot roof,
-  and smaller ones tighten it (0.129 mm at 0.10). The bin does not depend on it.
+  original 0.229 mm perpendicular gap between the tongue's chamfer and the slot roof, and smaller
+  ones tighten it (0.129 mm at 0.10). The bin does not depend on it.
 - Customizer: "Lid clearance" (0.05...0.6 mm, step 0.05) on the Lid tab and the open assembly
   tab, not on the Bin tab.
+
+`lidChamfer` (mm) is the rise of the slot roof: the slope from the slot face, at the top of the
+lid plate, up and inward to where it meets the inside of the wall. The lid tongue's top outer
+edge has a chamfer parallel to the roof, so it follows the same slope.
+
+- Default: 1.4 mm. Original-equivalent value: 0.8 mm (the original 45 degree roof, which rises
+  0.798 mm over a run of 0.798 mm and ends on the 45 degree underside of the stacking lip).
+  Range: 0.8...2.0 mm.
+- Effect: the run of a steeper roof is fixed by the wall. It ends on the stacking lip's vertical
+  inner face, 0.7 mm in from the slot face (the inner face is not moved, since bins above stack
+  on it), so the slope is `lidChamfer / 0.7`: about 63 degrees at 1.4 and 71 degrees at 2.0.
+  Between 0.8 and 0.896 (where the roof first reaches the vertical face) the slope is
+  interpolated, which keeps the rise within 0.003 mm of the setting. At 2.0 the roof tip is
+  0.7 mm below the lip's inner top chamfer. The tongue's chamfer keeps a perpendicular gap of
+  0.229 mm (at the default clearance) to the roof for every rise, and the tongue's peak above
+  the plate grows from 0.64 mm (0.8) to 0.89 mm (1.4) and 1.30 mm (2.0).
+- Customizer: "Lid chamfer" (0.8...2.0 mm, step 0.1) on all three tabs, since both the bin and
+  the lid carry the slope.
 
 ## Parts
 
@@ -130,6 +148,7 @@ itself does not use `@Parameter`.
 | Lid direction | Up, Down, Left, Right | Left | `Lid_Orientation` | all |
 | Lip grips | None, Along X, Along Y, Along X and Y | Along X and Y | `Lip_Grips` | all |
 | Lid clearance | 0.05...0.6 mm, step 0.05 | 0.20 | side gap of the lid (original value 0.45) | Lid, Bin and lid (open) |
+| Lid chamfer | 0.8...2.0 mm, step 0.1 | 1.4 | rise of the slot roof and the lid chamfer (original value 0.8) | all |
 | Interior style | Minimal, Partially raised | Minimal | `Interior_Style` | Bin, Bin and lid (open) |
 | Compartments | Equal grid, Two sizes | Equal grid | `div_pattern` | Bin, Bin and lid (open) |
 | Dividers X | 0...12 | 6 | `divx` | Bin, Bin and lid (open) |
@@ -140,7 +159,9 @@ All parameters are declared in the project, so a value is shared between the tab
 Cadova lists a parameter on a tab only when that model reads it, and on every tab when the
 project body reads it. The settings the lid depends on are read in the project body; the
 bin-only settings are read only inside the `Bin` and `Bin and lid (open)` models, since the lid
-geometry does not depend on them. The conditional parameters are read only while they apply.
+geometry does not depend on them. Lid clearance is read inside the `Lid` and
+`Bin and lid (open)` models and Lid chamfer inside all three, so they are listed last on their
+tabs. The conditional parameters are read only while they apply.
 Internal block height is clamped to the bin's storage height by `validated()`.
 
 The catalog can be printed natively, the way Cadova's customizer page asks for it: write a
@@ -233,11 +254,11 @@ the cases investigated). Rounding fixes that, and it adds a noise floor of rough
 is `lid_2x2x3_fit_sweep`, which `generate.py` keeps in full precision (`FULL_PRECISION`)
 because float32 rounding made the import drop a wedge there.
 
-The suite currently has 75 tests (`swift build --skip-update && swift test --skip-update`), all passing. `ProductionTests`
+The suite currently has 81 tests (`swift build --skip-update && swift test --skip-update`), all passing. `ProductionTests`
 build the default configuration with `cornerSegments == nil` and Cadova's default segmentation,
 as the exporter does, and check volume, bounds, symmetric difference and the closed bin/lid
 interference against the references (with the original lid fit preset); `LidFitTests` measure
-the lid clearance by ray casts on the closed assembly; it also checks that `divMultiple` of 0 or less is clamped. The closed bin and
+the lid clearance, the slot roof and the tongue chamfer by ray casts on the closed assembly; it also checks that `divMultiple` of 0 or less is clamped. The closed bin and
 lid assemblies have no OpenSCAD CLI reference (`lid-bin.scad` uses them for preview only), so
 the lid placement there is checked by footprint, shift and overlap tests instead.
 

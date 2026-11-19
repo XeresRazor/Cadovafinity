@@ -67,6 +67,10 @@ await Project(packageRelative: "Models") {
                description: "Side gap between the lid and the slot; smaller fits closer (original model: 0.45)")
     var lidClearance = defaults.lidClearance
 
+    @Parameter("Lid chamfer", in: LiddedBinLimits.lidChamfer, step: 0.1, unit: "mm",
+               description: "Height of the slot roof slope and the matching chamfer on the lid's top edge; larger is steeper and easier to see (original model: 0.8)")
+    var lidChamfer = defaults.lidChamfer
+
     // Bin only: declared here so that the Bin and open assembly tabs share them, read only in
     // those two models
 
@@ -136,20 +140,28 @@ await Project(packageRelative: "Models") {
         return input
     }
 
-    // The clearance is read only where the lid is built, so the Bin tab does not list it
+    // The clearance is read only where the lid is built, so the Bin tab does not list it. The
+    // chamfer shapes both the slot roof and the lid, so all three models read it.
     let withClearance: @Sendable (LiddedBinInput, Double) -> LiddedBinInput = { input, clearance in
         var input = input
         input.lidClearance = clearance
         return input
     }
+    let withChamfer: @Sendable (LiddedBinInput, Double) -> LiddedBinInput = { input, chamfer in
+        var input = input
+        input.lidChamfer = chamfer
+        return input
+    }
 
     await Model("Bin") {
-        LiddedBinDesign(binInput().configuration).geometry(for: .bin)
+        LiddedBinDesign(withChamfer(binInput(), lidChamfer).configuration).geometry(for: .bin)
     }
     await Model("Lid") {
-        LiddedBinDesign(withClearance(lidInput, lidClearance).configuration).geometry(for: .lid)
+        LiddedBinDesign(withChamfer(withClearance(lidInput, lidClearance), lidChamfer).configuration)
+            .geometry(for: .lid)
     }
     await Model("Bin and lid (open)") {
-        LiddedBinDesign(withClearance(binInput(), lidClearance).configuration).geometry(for: .bothOpen)
+        LiddedBinDesign(withChamfer(withClearance(binInput(), lidClearance), lidChamfer).configuration)
+            .geometry(for: .bothOpen)
     }
 }

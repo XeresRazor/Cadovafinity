@@ -26,6 +26,7 @@ public struct LiddedBinInput: Sendable, Equatable {
     public var divY = 6
     public var divMultiple = 2.0
     public var lidClearance = LiddedBinConfiguration().lidClearance
+    public var lidChamfer = LiddedBinConfiguration().lidChamfer
 
     public init() {}
 
@@ -45,6 +46,7 @@ public struct LiddedBinInput: Sendable, Equatable {
         c.interiorStyle = interiorStyle; c.compartmentPattern = compartmentPattern
         c.divX = divX; c.divY = divY; c.divMultiple = divMultiple
         c.lidClearance = lidClearance
+        c.lidChamfer = lidChamfer
         return c.validated()
     }
 }

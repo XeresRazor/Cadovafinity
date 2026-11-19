@@ -2,15 +2,68 @@ import Cadova
 import GridfinityRebuilt
 
 extension LiddedBinDesign {
-    /// gf_profile_wall_lid_lip: the wall profile with the groove the lid slides in.
+    // The slot roof.
+    //
+    // Distances below are measured inward from the outer wall face (`a` for the slot face, `f`
+    // for the lip's inner face) and heights from the plate top (`dh - vPos` in the profile). The
+    // groove polygon's roof starts at the slot face (`a = wallThickness`, 1.2) at the plate top
+    // and rises inward with slope `s`. It ends where it meets the inside of the wall, which comes
+    // from `profile_wall`'s lip: the base profile, offset by `dClear`, cut from the wall.
+    // - The lip's vertical inner face is at `f = rC2 - 2 * dClear` (1.9, y = 39.85 for a 2x2 bin),
+    //   from `kneeRise` up to the inner top chamfer at `vPos + hBase - rC2 + dClear * (1 - sqrt 2)`
+    //   (2.696 above the plate top, z = 23.5).
+    // - Below it a 45 degree overhang (the base's `rC1` chamfer, offset) runs inward and down. On
+    //   it, run + rise = `rC2 + rC1 - dClear * (1 + sqrt 2) + vPos - a` (1.596), and it meets the
+    //   vertical face at `kneeRise = vPos + rC1 + dClear * (1 - sqrt 2)` (0.896).
+    // The original 45 degree roof ends on that overhang: run = rise = 1.596 / 2 = 0.798 (the tip
+    // at y = 39.75, z = 21.6). A roof steeper than `kneeRise / faceRun` (1.28) ends on the
+    // vertical face instead, so its run is `faceRun = f - a = 0.7` and its rise is `0.7 * s`.
+    //
+    // `fit.chamfer` is the roof's rise. 0.8 (the original's 0.798, rounded) is the original
+    // polygon with s = 1 exactly. From the knee rise up, s = rise / 0.7, which puts the tip at
+    // exactly that height on the vertical face. In between, s is interpolated linearly, which
+    // keeps the rise within 0.003 mm of the setting. The roof tip stays below the inner top
+    // chamfer for rises up to 2.696, above the 2.0 maximum of `LiddedBinLimits.lidChamfer`.
+
+    /// The horizontal run of a roof that ends on the lip's vertical inner face (0.7).
+    var roofFaceRun: Double { d.rC2 - 2 * d.dClear - fit.wallThickness }
+
+    /// The rise at which the roof meets the bottom of the lip's vertical inner face (0.896).
+    var roofKneeRise: Double { fit.vPosTolerance + d.rC1 + d.dClear * (1 - 2.0.squareRoot()) }
+
+    /// The slope (rise over run) of the slot roof for `fit.chamfer`. 1 for the original rise.
+    var roofSlope: Double {
+        let rise = fit.chamfer, original = LidFit.originalChamfer
+        let run = roofFaceRun, knee = roofKneeRise
+        guard rise > original, run > 0 else { return 1 }
+        if rise >= knee || knee <= original { return max(1, rise / run) }
+        return 1 + (rise - original) * (knee / run - 1) / (knee - original)
+    }
+
+    /// How far the lid's groove roof is lowered so that it stays parallel to the bin's roof at the
+    /// original perpendicular distance. The lid's polygon starts `wallThickness - hFitTolerance`
+    /// (0.1) further out than the bin's. At 45 degrees that is 0.1 / sqrt 2 = 0.071 across the
+    /// roof (the tongue chamfer's gap is then `lipClearance - 0.071`, 0.229 for 0.30). A steeper
+    /// roof would turn the same horizontal step into a larger perpendicular one and narrow the
+    /// gap, so the lid's roof drops by `0.1 * (s - sqrt((1 + s^2) / 2))` for slope `s`. That is
+    /// 0 for s = 1, so the original lid is unchanged.
+    var lidRoofDrop: Double {
+        let s = roofSlope
+        return (fit.wallThickness - fit.hFitTolerance) * (s - ((1 + s * s) / 2).squareRoot())
+    }
+
+    /// gf_profile_wall_lid_lip: the wall profile with the groove the lid slides in. The roof
+    /// slope follows `fit.chamfer` (see `roofSlope`).
     func lidLipWallProfile(lid: Bool) -> any Geometry2D {
         let dh = storageHeight
+        let s = roofSlope
+        let roofBase = fit.thickness + fit.vFitTolerance - (lid ? lidRoofDrop : 0)
         return d.wallProfile(height: dh)
             .subtracting {
                 Polygon([
                     [0, 0],
-                    [0, fit.thickness + fit.vFitTolerance],
-                    [d.dWall2, fit.thickness + fit.vFitTolerance + d.dWall2],
+                    [0, roofBase],
+                    [d.dWall2, roofBase + d.dWall2 * s],
                     [d.dWall2, 0],
                 ])
                 .translated(

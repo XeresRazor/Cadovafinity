@@ -11,6 +11,7 @@ public struct LiddedBinDesign: Sendable {
         // and a tighter gap tightens the chamfer against the slot roof with it.
         var fit = LidFit(sideClearance: configuration.lidClearance)
         fit.lipClearance = min(0.30, configuration.lidClearance + 0.10)
+        fit.chamfer = configuration.lidChamfer
         self.init(configuration, fit: fit)
     }
 

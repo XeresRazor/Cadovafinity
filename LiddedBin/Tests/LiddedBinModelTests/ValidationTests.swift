@@ -46,6 +46,19 @@ struct ValidationTests {
         #expect(LiddedBinConfiguration.openSCADOriginal.validated().lidClearance == 0.45)
     }
 
+    @Test func `lid chamfer is clamped`() {
+        var c = LiddedBinConfiguration()
+        c.lidChamfer = 0.2
+        #expect(c.validated().lidChamfer == LiddedBinLimits.lidChamfer.lowerBound)
+        c.lidChamfer = 5
+        #expect(c.validated().lidChamfer == LiddedBinLimits.lidChamfer.upperBound)
+        c.lidChamfer = 1.1
+        #expect(c.validated().lidChamfer == 1.1)
+        #expect(LiddedBinConfiguration().validated().lidChamfer == 1.4)
+        #expect(LiddedBinConfiguration.openSCADOriginal.validated().lidChamfer == 0.8)
+        #expect(LiddedBinLimits.lidChamfer == 0.8...2.0)
+    }
+
     @Test func `height is clamped to the range of its mode`() {
         var c = LiddedBinConfiguration()
         c.heightMode = .internalMillimeters

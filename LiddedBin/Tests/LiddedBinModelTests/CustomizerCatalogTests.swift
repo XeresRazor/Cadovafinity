@@ -121,7 +121,12 @@ struct CustomizerCatalogTests {
             #expect(!lid.labels.contains(label), "\(label)")
         }
         #expect(lid.labels == ["Grid width", "Grid depth", "Height style", "Height",
-                               "Internal block height", "Lid direction", "Lip grips", "Lid clearance"])
+                               "Internal block height", "Lid direction", "Lip grips", "Lid clearance",
+                               "Lid chamfer"])
+        // The chamfer shapes the slot roof and the lid, so every tab lists it, with one declaration
+        #expect(bin.labels.last == "Lid chamfer" && open.labels.last == "Lid chamfer")
+        #expect(bin.parameter("Lid chamfer")?.key == lid.parameter("Lid chamfer")?.key)
+        #expect(open.parameter("Lid chamfer")?.key == lid.parameter("Lid chamfer")?.key)
         // The Bin tab does not depend on the clearance; the Lid tab and the open assembly do
         #expect(!bin.labels.contains("Lid clearance"))
         #expect(open.labels.contains("Lid clearance"))
@@ -204,7 +209,8 @@ struct CustomizerCatalogTests {
         #expect(number("Dividers Y") == Double(d.divY))
         #expect(number("Size multiple") == d.divMultiple)
         #expect(number("Lid clearance") == d.lidClearance)
-        #expect(all.count == 16)
+        #expect(number("Lid chamfer") == d.lidChamfer)
+        #expect(all.count == 17)
 
         func range(_ label: String) -> ClosedRange<Double>? {
             guard let p = all[label], let lo = p.minimum, let hi = p.maximum else { return nil }
@@ -220,7 +226,10 @@ struct CustomizerCatalogTests {
         #expect(range("Dividers Y") == doubles(LiddedBinLimits.dividers))
         #expect(range("Size multiple") == LiddedBinLimits.divMultiple)
         #expect(range("Lid clearance") == LiddedBinLimits.lidClearance)
+        #expect(range("Lid chamfer") == LiddedBinLimits.lidChamfer)
         #expect(all["Lid clearance"]?.step == 0.05)
+        #expect(all["Lid chamfer"]?.step == 0.1)
+        #expect(all["Lid chamfer"]?.unit == "mm")
         #expect(all["Size multiple"]?.step == 0.5)
     }
 }

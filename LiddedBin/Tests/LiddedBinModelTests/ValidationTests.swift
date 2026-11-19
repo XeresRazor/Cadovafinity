@@ -59,6 +59,20 @@ struct ValidationTests {
         #expect(LiddedBinLimits.lidChamfer == 0.8...2.0)
     }
 
+    @Test func `detent interference is clamped`() {
+        var c = LiddedBinConfiguration()
+        c.detentInterference = 0
+        #expect(c.validated().detentInterference == LiddedBinLimits.detentInterference.lowerBound)
+        c.detentInterference = 2
+        #expect(c.validated().detentInterference == LiddedBinLimits.detentInterference.upperBound)
+        c.detentInterference = 0.35
+        #expect(c.validated().detentInterference == 0.35)
+        #expect(LiddedBinConfiguration().validated().detentInterference == 0.25)
+        #expect(LiddedBinConfiguration.openSCADOriginal.validated().detentInterference == 0.15)
+        #expect(LiddedBinConfiguration.openSCADOriginal.validated().detentStyle == .original)
+        #expect(LiddedBinLimits.detentInterference == 0.05...0.6)
+    }
+
     @Test func `height is clamped to the range of its mode`() {
         var c = LiddedBinConfiguration()
         c.heightMode = .internalMillimeters

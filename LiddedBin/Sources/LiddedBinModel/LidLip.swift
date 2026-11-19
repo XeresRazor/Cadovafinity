@@ -1,3 +1,4 @@
+import Foundation
 import Cadova
 import GridfinityRebuilt
 
@@ -145,39 +146,89 @@ extension LiddedBinDesign {
         }
     }
 
-    /// gf_bin_lid_tabs: the two small tabs that hold the lid closed.
+    /// The plan profile of the seated detent bump, in the tab frame of `lidTabs`: x along the
+    /// slide direction with the closed end toward +x, y across it with the slot face at y = 0 and
+    /// the slot toward -y. The bump is a trapezoid `fit.detentProtrusion` deep: a ramp at
+    /// `detentRampAngle` to the slide direction on the open-end side, a flat top
+    /// `detentFlatLength` long, and a face at `detentStopAngle` on the closed-end side, which ends
+    /// where the original bump ends (x = 0.9). A 0.6 deep slab behind it sinks into the wall.
+    func seatedDetentProfile() -> any Geometry2D {
+        let p = fit.detentProtrusion
+        let ramp = p / Foundation.tan(LidFit.detentRampAngle * .pi / 180)
+        let stop = p / Foundation.tan(LidFit.detentStopAngle * .pi / 180)
+        let end = 0.9, slab = 0.6
+        let start = end - stop - LidFit.detentFlatLength - ramp
+        return Polygon([
+            [start, slab], [start, 0], [start + ramp, -p], [end - stop, -p], [end, 0], [end, slab],
+        ])
+    }
+
+    /// The seated detent in the tab frame (see `seatedDetentProfile`), extruded `height` from
+    /// z = 0. The bump (`notch == false`) is clipped so that above the plate top it never reaches
+    /// past the lip's inner face, which only matters for protrusions over `roofFaceRun` (0.7). The
+    /// notch is the bump grown by `detentSeatClearance` all round in plan view.
+    func seatedDetent(notch: Bool, height: Double, plateTop: Double) -> any Geometry3D {
+        if notch {
+            return seatedDetentProfile()
+                .offset(amount: LidFit.detentSeatClearance, style: .round)
+                .extruded(height: height)
+        }
+        return seatedDetentProfile()
+            .extruded(height: height)
+            .subtracting {
+                Box([10, 10, height])
+                    .translated(x: -5, y: -10 - roofFaceRun, z: plateTop)
+            }
+    }
+
+    /// gf_bin_lid_tabs: the two small tabs that hold the lid closed: a bump on each side wall of
+    /// the bin (`adjust == false`) and the matching notches cut in the lid (`adjust == true`), at
+    /// the closed end. `fit.detentStyle` chooses the original round bump or the seated catch.
     func lidTabs(adjust: Bool = false) -> any Geometry3D {
-        let adj = adjust ? -fit.hFitTolerance * 1.5 + fit.wallThickness : 0
+        let seated = fit.detentStyle == .seated
+        // The original notch is the bump moved 0.45 mm inward. The seated notch is grown in place.
+        let adj = adjust && !seated ? -fit.hFitTolerance * 1.5 + fit.wallThickness : 0
         let cr = 0.6
         let m = lidDirection
         let tabPosX = m.x * (-(d.lGrid * gridX - 0.5) / 2 + d.rBase + cr)
         let tabPosY = m.y * (-(d.lGrid * gridY - 0.5) / 2 + d.rBase + cr)
         let sepX = abs(m.y) * (gridX * d.lGrid / 2 - 0.5 / 2 - fit.wallThickness + adj)
         let sepY = abs(m.x) * (gridY * d.lGrid / 2 - 0.5 / 2 - fit.wallThickness + adj)
+        let height = fit.lipFitTolerance * 2 + fit.thickness + 2
+        let zBase = -fit.vFitTolerance - fit.vPosTolerance
+        let baseZ = storageHeight + d.hBase - fit.thickness - fit.lipFitTolerance / 2 - 0.001
 
-        let profile = Union {
-            Circle(radius: cr)
-            Rectangle(cr * 8).aligned(at: .center).translated(y: cr * 4)
-        }
-        .offset(amount: cr * 0.5, style: .round)
-        .offset(amount: -(cr * 0.5), style: .round)
-        .intersecting {
-            Rectangle([cr * 3, cr * 2]).aligned(at: .center)
+        let solid: any Geometry3D
+        if seated {
+            // The tab frame's x maps to world +x for left and right, and to world -y for up and
+            // down (the 270 degree turn). The closed end is opposite the lid direction, so the
+            // profile (built with its closed end toward +x) is mirrored for right and down.
+            let closedTowardPlusX = m.x != 0 ? m.x < 0 : m.y > 0
+            let plateTop = storageHeight + d.hBase - fit.vPosTolerance - (baseZ + zBase)
+            let detent = seatedDetent(notch: adjust, height: height, plateTop: plateTop)
+            solid = closedTowardPlusX ? detent : detent.flipped(along: .x)
+        } else {
+            let profile = Union {
+                Circle(radius: cr)
+                Rectangle(cr * 8).aligned(at: .center).translated(y: cr * 4)
+            }
+            .offset(amount: cr * 0.5, style: .round)
+            .offset(amount: -(cr * 0.5), style: .round)
+            .intersecting {
+                Rectangle([cr * 3, cr * 2]).aligned(at: .center)
+            }
+            solid = profile.extruded(height: height)
         }
 
-        let tab = profile
-            .extruded(height: fit.lipFitTolerance * 2 + fit.thickness + 2)
+        let tab = solid
             .rotated(z: m.x != 0 ? 0° : 270°)
-            .translated(x: sepX, y: sepY, z: -fit.vFitTolerance - fit.vPosTolerance)
+            .translated(x: sepX, y: sepY, z: zBase)
 
         // OpenSCAD loops over mirror([0, ml]) for ml in [0, 1]; mirror([0, 0]) is the identity.
         return Union {
             tab
             tab.flipped(along: m.x != 0 ? .y : .x)
         }
-        .translated(
-            x: tabPosX, y: tabPosY,
-            z: storageHeight + d.hBase - fit.thickness - fit.lipFitTolerance / 2 - 0.001
-        )
+        .translated(x: tabPosX, y: tabPosY, z: baseZ)
     }
 }

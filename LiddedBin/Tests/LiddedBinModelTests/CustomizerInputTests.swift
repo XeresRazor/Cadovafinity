@@ -15,6 +15,8 @@ struct CustomizerInputTests {
         #expect(c.internalHeightOverride == d.internalHeightOverride)
         #expect(c.lidClearance == d.lidClearance && d.lidClearance == 0.20)
         #expect(c.lidChamfer == d.lidChamfer && d.lidChamfer == 1.4)
+        #expect(c.detentInterference == d.detentInterference && d.detentInterference == 0.25)
+        #expect(c.detentStyle == .seated)
         #expect(c.cornerSegments == nil)
     }
 
@@ -55,12 +57,14 @@ struct CustomizerInputTests {
         i.interiorStyle = .partialRaised; i.compartmentPattern = .multiSize
         i.divX = 3; i.divY = 4; i.divMultiple = 3
         i.lidChamfer = 1.7
+        i.detentInterference = 0.4
         let c = i.configuration
         #expect(c.snapHeight && c.internalHeightOverride == 4)
         #expect(c.lipGrips == .none && c.lidOrientation == .up)
         #expect(c.interiorStyle == .partialRaised && c.compartmentPattern == .multiSize)
         #expect(c.divX == 3 && c.divY == 4 && c.divMultiple == 3)
         #expect(c.lidChamfer == 1.7)
+        #expect(c.detentInterference == 0.4)
     }
 
     @Test func `choices have unique string raw values and display names`() {
@@ -102,7 +106,10 @@ struct CustomizerInputTests {
         var input = LiddedBinInput.defaults
         input.lidClearance = LiddedBinConfiguration.openSCADOriginal.lidClearance
         input.lidChamfer = LiddedBinConfiguration.openSCADOriginal.lidChamfer
-        let design = LiddedBinDesign(input.configuration)
+        var configuration = input.configuration
+        configuration.detentStyle = .original
+        configuration.detentInterference = LiddedBinConfiguration.openSCADOriginal.detentInterference
+        let design = LiddedBinDesign(configuration)
         func volume(_ part: LiddedBinPart) async throws -> Double {
             let g = design.geometry(for: part)
             return try await ModelFileGenerator.evaluate { await $0.measurements(of: g).volume }

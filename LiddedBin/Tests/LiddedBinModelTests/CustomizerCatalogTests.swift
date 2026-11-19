@@ -95,6 +95,7 @@ struct CustomizerCatalogTests {
     static let binOnly = ["Interior style", "Compartments", "Dividers X", "Dividers Y"]
     static let shared = ["Grid width", "Grid depth", "Height style", "Internal block height",
                          "Lid direction", "Lip grips"]
+    static let fit = ["Lid clearance", "Lid chamfer", "Detent interference"]
 
     func models(_ catalog: Catalog) throws -> (bin: Model, lid: Model, open: Model) {
         let byName = Dictionary(uniqueKeysWithValues: catalog.models.map { ($0.name, $0) })
@@ -121,16 +122,17 @@ struct CustomizerCatalogTests {
             #expect(!lid.labels.contains(label), "\(label)")
         }
         #expect(lid.labels == ["Grid width", "Grid depth", "Height style", "Height",
-                               "Internal block height", "Lid direction", "Lip grips", "Lid clearance",
-                               "Lid chamfer"])
-        // The chamfer shapes the slot roof and the lid, so every tab lists it, with one declaration
-        #expect(bin.labels.last == "Lid chamfer" && open.labels.last == "Lid chamfer")
-        #expect(bin.parameter("Lid chamfer")?.key == lid.parameter("Lid chamfer")?.key)
-        #expect(open.parameter("Lid chamfer")?.key == lid.parameter("Lid chamfer")?.key)
-        // The Bin tab does not depend on the clearance; the Lid tab and the open assembly do
-        #expect(!bin.labels.contains("Lid clearance"))
-        #expect(open.labels.contains("Lid clearance"))
-        #expect(lid.parameter("Lid clearance")?.key == open.parameter("Lid clearance")?.key)
+                               "Internal block height", "Lid direction", "Lip grips"] + Self.fit)
+        // Both parts depend on every lid fit control, so every tab lists them after Lip grips,
+        // with one declaration each
+        for tab in [bin, lid, open] {
+            let start = try #require(tab.labels.firstIndex(of: "Lip grips"))
+            #expect(Array(tab.labels[(start + 1)...].prefix(3)) == Self.fit, "\(tab.name)")
+        }
+        for label in Self.fit {
+            #expect(bin.parameter(label)?.key == lid.parameter(label)?.key, "\(label)")
+            #expect(open.parameter(label)?.key == lid.parameter(label)?.key, "\(label)")
+        }
         // Bin and open assembly share one declaration of each bin-only parameter
         for label in Self.binOnly {
             #expect(bin.parameter(label)?.key == open.parameter(label)?.key)
@@ -210,7 +212,9 @@ struct CustomizerCatalogTests {
         #expect(number("Size multiple") == d.divMultiple)
         #expect(number("Lid clearance") == d.lidClearance)
         #expect(number("Lid chamfer") == d.lidChamfer)
-        #expect(all.count == 17)
+        #expect(number("Detent interference") == d.detentInterference)
+        #expect(d.detentInterference == 0.25)
+        #expect(all.count == 18)
 
         func range(_ label: String) -> ClosedRange<Double>? {
             guard let p = all[label], let lo = p.minimum, let hi = p.maximum else { return nil }
@@ -227,9 +231,13 @@ struct CustomizerCatalogTests {
         #expect(range("Size multiple") == LiddedBinLimits.divMultiple)
         #expect(range("Lid clearance") == LiddedBinLimits.lidClearance)
         #expect(range("Lid chamfer") == LiddedBinLimits.lidChamfer)
+        #expect(range("Detent interference") == LiddedBinLimits.detentInterference)
+        #expect(LiddedBinLimits.detentInterference == 0.05...0.6)
         #expect(all["Lid clearance"]?.step == 0.05)
         #expect(all["Lid chamfer"]?.step == 0.1)
         #expect(all["Lid chamfer"]?.unit == "mm")
+        #expect(all["Detent interference"]?.step == 0.05)
+        #expect(all["Detent interference"]?.unit == "mm")
         #expect(all["Size multiple"]?.step == 0.5)
     }
 }

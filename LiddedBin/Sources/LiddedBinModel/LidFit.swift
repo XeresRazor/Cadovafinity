@@ -19,8 +19,31 @@ struct LidFit: Sendable {
     /// follows. `originalChamfer` (0.8) gives the original 45 degree roof.
     var chamfer = LidFit.originalChamfer
 
+    /// The shape of the detent: the bump on the bin's slot face and the notch in the lid's plate
+    /// edge. `.original` is lid-bin.scad's (a round bump 0.6 deep, a notch 0.45 deeper than it).
+    var detentStyle: DetentStyle = .original
+    /// How far in mm the seated bump overlaps the lid's plate edge while the lid slides past it.
+    /// The bump protrudes `sideClearance + detentInterference` from the slot face. Only used by
+    /// `.seated`; the original bump's 0.6 protrusion gives 0.15 at the original 0.45 side gap.
+    var detentInterference = LidFit.originalDetentInterference
+
     /// The roof rise that reproduces the original 45 degree slot roof of lid-bin.scad.
     static let originalChamfer = 0.8
+    /// The overlap of lid-bin.scad's bump with the plate edge (0.6 protrusion less the 0.45 gap).
+    static let originalDetentInterference = 0.15
+    /// The gap in mm all round between the seated bump and the lid's notch when the lid is closed.
+    static let detentSeatClearance = 0.05
+    /// The angle in degrees between the slide direction and the bump face the lid meets first
+    /// when closing (the face toward the open end). Gentle, so the lid rides onto the bump.
+    static let detentRampAngle = 30.0
+    /// The angle in degrees between the slide direction and the bump face toward the closed end.
+    /// Steep, so the notch holds the lid closed until it is pushed.
+    static let detentStopAngle = 65.0
+    /// The length in mm of the bump's flat top along the slide direction.
+    static let detentFlatLength = 0.8
+
+    /// How far the seated bump protrudes from the slot face.
+    var detentProtrusion: Double { sideClearance + detentInterference }
 
     init(sideClearance: Double? = nil) {
         sideClearanceOverride = sideClearance

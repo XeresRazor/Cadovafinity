@@ -12,6 +12,8 @@ public struct LiddedBinDesign: Sendable {
         var fit = LidFit(sideClearance: configuration.lidClearance)
         fit.lipClearance = min(0.30, configuration.lidClearance + 0.10)
         fit.chamfer = configuration.lidChamfer
+        fit.detentStyle = configuration.detentStyle
+        fit.detentInterference = configuration.detentInterference
         self.init(configuration, fit: fit)
     }
 

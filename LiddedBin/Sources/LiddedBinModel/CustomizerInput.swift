@@ -27,6 +27,7 @@ public struct LiddedBinInput: Sendable, Equatable {
     public var divMultiple = 2.0
     public var lidClearance = LiddedBinConfiguration().lidClearance
     public var lidChamfer = LiddedBinConfiguration().lidChamfer
+    public var detentInterference = LiddedBinConfiguration().detentInterference
 
     public init() {}
 
@@ -47,6 +48,7 @@ public struct LiddedBinInput: Sendable, Equatable {
         c.divX = divX; c.divY = divY; c.divMultiple = divMultiple
         c.lidClearance = lidClearance
         c.lidChamfer = lidChamfer
+        c.detentInterference = detentInterference
         return c.validated()
     }
 }

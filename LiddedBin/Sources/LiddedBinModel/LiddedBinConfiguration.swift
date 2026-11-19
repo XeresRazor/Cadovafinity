@@ -22,6 +22,17 @@ public enum CompartmentPattern: String, Sendable, CaseIterable {
     case multiSize = "multisize"
 }
 
+/// The detent that holds the lid closed.
+public enum DetentStyle: String, Sendable, CaseIterable {
+    /// lid-bin.scad's detent: a round bump 0.6 mm deep and a notch 0.45 mm deeper than the bump,
+    /// so a closed lid sits clear of the bump.
+    case original
+    /// A seated catch: an asymmetric bump (a gentle ramp toward the open end, a steep face toward
+    /// the closed end) that overlaps the plate edge by the detent interference, and a notch that
+    /// is the bump grown by a 0.05 mm seat clearance, so the bump nests in the notch of a closed lid.
+    case seated
+}
+
 /// Part
 public enum LiddedBinPart: String, Sendable, CaseIterable {
     case bin
@@ -77,14 +88,27 @@ public struct LiddedBinConfiguration: Sendable {
     /// original model's equivalent is 0.8 (a 45 degree roof).
     public var lidChamfer = 1.4
 
+    /// How far in mm the detent bump on the bin's slot face overlaps the lid's edge as the lid
+    /// slides past it. The bump protrudes the lid clearance plus this from the slot face, so the
+    /// overlap does not change with the clearance. Larger values hold the lid more firmly. The
+    /// original model's equivalent is 0.15.
+    public var detentInterference = 0.25
+
+    /// The detent shape. `.seated` is the catch the lid snaps into; `.original` is lid-bin.scad's
+    /// detent, which `detentInterference` does not affect.
+    public var detentStyle: DetentStyle = .seated
+
     public init() {}
 
     /// The configuration with every lid fit field set to the value that reproduces lid-bin.scad
-    /// (`lidClearance = 0.45`, `lidChamfer = 0.8`). The OpenSCAD reference tests start from this.
+    /// (`lidClearance = 0.45`, `lidChamfer = 0.8`, the original detent with its 0.15 interference).
+    /// The OpenSCAD reference tests start from this.
     public static var openSCADOriginal: LiddedBinConfiguration {
         var c = LiddedBinConfiguration()
         c.lidClearance = 0.45
         c.lidChamfer = 0.8
+        c.detentInterference = 0.15
+        c.detentStyle = .original
         return c
     }
 }

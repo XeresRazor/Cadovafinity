@@ -6,8 +6,8 @@ import LiddedBinModel
 //
 // Where a parameter is read decides which tabs list it. Cadova lists a parameter on every tab when
 // the project's own content reads it, and on a model's tab when that model reads it. So:
-// - the settings both the bin and the lid depend on (size, height, lid direction, lip grips) are
-//   read in the project body and appear on every tab;
+// - the settings both the bin and the lid depend on (size, height, lid direction, lip grips, and
+//   the three lid fit controls) are read in the project body and appear on every tab;
 // - the bin-only settings (interior style, compartments, dividers, size multiple) are declared in
 //   the project body, so the Bin and open assembly tabs share their values, but are read only
 //   inside those two models, so the Lid tab does not list them.
@@ -71,6 +71,10 @@ await Project(packageRelative: "Models") {
                description: "Height of the slot roof slope and the matching chamfer on the lid's top edge; larger is steeper and easier to see (original model: 0.8)")
     var lidChamfer = defaults.lidChamfer
 
+    @Parameter("Detent interference", in: LiddedBinLimits.detentInterference, step: 0.05, unit: "mm",
+               description: "How far the catch bumps on the bin overlap the lid's edge as it slides; larger holds the lid more firmly (original model: 0.15)")
+    var detentInterference = defaults.detentInterference
+
     // Bin only: declared here so that the Bin and open assembly tabs share them, read only in
     // those two models
 
@@ -123,6 +127,12 @@ await Project(packageRelative: "Models") {
     shared.internalBlockHeight = internalBlockHeight
     shared.lidOrientation = lidOrientation
     shared.lipGrips = lipGrips
+    // The lid fit: the clearance sets the lid's size and, with the interference, how far the
+    // detent bumps on the bin protrude; the chamfer shapes the slot roof and the lid's tongue.
+    // Both parts depend on all three.
+    shared.lidClearance = lidClearance
+    shared.lidChamfer = lidChamfer
+    shared.detentInterference = detentInterference
 
     let lidInput = shared
 
@@ -140,28 +150,13 @@ await Project(packageRelative: "Models") {
         return input
     }
 
-    // The clearance is read only where the lid is built, so the Bin tab does not list it. The
-    // chamfer shapes both the slot roof and the lid, so all three models read it.
-    let withClearance: @Sendable (LiddedBinInput, Double) -> LiddedBinInput = { input, clearance in
-        var input = input
-        input.lidClearance = clearance
-        return input
-    }
-    let withChamfer: @Sendable (LiddedBinInput, Double) -> LiddedBinInput = { input, chamfer in
-        var input = input
-        input.lidChamfer = chamfer
-        return input
-    }
-
     await Model("Bin") {
-        LiddedBinDesign(withChamfer(binInput(), lidChamfer).configuration).geometry(for: .bin)
+        LiddedBinDesign(binInput().configuration).geometry(for: .bin)
     }
     await Model("Lid") {
-        LiddedBinDesign(withChamfer(withClearance(lidInput, lidClearance), lidChamfer).configuration)
-            .geometry(for: .lid)
+        LiddedBinDesign(lidInput.configuration).geometry(for: .lid)
     }
     await Model("Bin and lid (open)") {
-        LiddedBinDesign(withChamfer(withClearance(binInput(), lidClearance), lidChamfer).configuration)
-            .geometry(for: .bothOpen)
+        LiddedBinDesign(binInput().configuration).geometry(for: .bothOpen)
     }
 }

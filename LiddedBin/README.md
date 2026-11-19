@@ -67,9 +67,10 @@ are not part of the public configuration; tests vary them through an internal in
 
 ## Lid fit
 
-Two lid fit controls of this port are not exposed by lid-bin.scad. Each has an
+Three lid fit controls of this port are not exposed by lid-bin.scad. Each has an
 original-equivalent value. `LiddedBinConfiguration.openSCADOriginal` is a configuration with
-every lid fit field set to that value (`lidClearance = 0.45`, `lidChamfer = 0.8`), and the
+every lid fit field set to that value (`lidClearance = 0.45`, `lidChamfer = 0.8`,
+`detentInterference = 0.15` with `detentStyle = .original`, the original detent shape), and the
 OpenSCAD reference tests build their designs from it.
 
 `lidClearance` (mm) is the gap between the lid's edge and the slot face on each side. The
@@ -81,9 +82,9 @@ original inset `0.5 + 3 * lid_hfit_tolerance` fixes a gap of 0.45 mm per side.
   `lidClearance` from the slot face. The offset around the tongue (`offset(delta = 0.30)` in the
   original) is derived as `min(0.30, lidClearance + 0.10)`: clearances of 0.20 and above keep the
   original 0.229 mm perpendicular gap between the tongue's chamfer and the slot roof, and smaller
-  ones tighten it (0.129 mm at 0.10). The bin does not depend on it.
-- Customizer: "Lid clearance" (0.05...0.6 mm, step 0.05) on the Lid tab and the open assembly
-  tab, not on the Bin tab.
+  ones tighten it (0.129 mm at 0.10). The bin depends on it through the detent bumps, whose
+  protrusion is `lidClearance + detentInterference`.
+- Customizer: "Lid clearance" (0.05...0.6 mm, step 0.05) on all three tabs.
 
 `lidChamfer` (mm) is the rise of the slot roof: the slope from the slot face, at the top of the
 lid plate, up and inward to where it meets the inside of the wall. The lid tongue's top outer
@@ -102,6 +103,33 @@ edge has a chamfer parallel to the roof, so it follows the same slope.
   the plate grows from 0.64 mm (0.8) to 0.89 mm (1.4) and 1.30 mm (2.0).
 - Customizer: "Lid chamfer" (0.8...2.0 mm, step 0.1) on all three tabs, since both the bin and
   the lid carry the slope.
+
+`detentInterference` (mm) is how far the detent bumps on the bin overlap the lid's plate edge as
+the lid slides past them. There is one bump on each side wall at the closed end, and a matching
+notch in each side of the lid.
+
+- Default: 0.25 mm. Original-equivalent value: 0.15 mm (the original bump protrudes 0.6 mm from
+  the slot face against a 0.45 mm side gap). Range: 0.05...0.6 mm.
+- Effect: the bump protrudes `lidClearance + detentInterference` from the slot face (0.45 mm by
+  default), so the overlap stays the same when the clearance changes. In plan view the bump is
+  a trapezoid: a 30 degree ramp (to the slide direction) on the side toward the open end, a
+  0.8 mm flat top, and a 65 degree stop face on the side toward the closed end, which ends where
+  the original bump ends. At the default protrusion the ramp runs 0.78 mm and the stop face
+  0.21 mm, so the bump is 1.79 mm long, about the original 1.8. The notch in the lid is the bump
+  grown by a 0.05 mm seat clearance all round, so in the closed position the bump nests in the
+  notch with 0.05 mm of play across the slide direction (0.10 mm along it at the ramp and
+  0.055 mm at the stop face) and the parts do not touch. A closing lid meets the gentle ramp
+  first and the bump drops into the notch; opening, the notch's stop face has to climb the
+  bump's steep stop face, which takes a definite push. The bump keeps the original height
+  (z 19.75 to 22.85 for a 3 unit bin). Where it reaches above the slot roof it is inside the
+  wall, and above the plate top it is clipped to the lip's inner face, which only affects
+  protrusions over 0.7 mm. The original detent (`detentStyle = .original`) is the round bump
+  0.6 mm deep with a notch 0.45 mm deeper than the bump, so a closed lid sits clear of it.
+- The bumps sit where the lid plate's edge starts to curve into its corner, so while the lid
+  slides the deepest overlap is 0.24 mm rather than the full 0.25 (measured on the straight
+  edge), and the overlap ends about 1.85 mm after the lid starts to open.
+- Customizer: "Detent interference" (0.05...0.6 mm, step 0.05) on all three tabs, since the bin
+  carries the bumps and the lid the notches.
 
 ## Parts
 
@@ -147,8 +175,9 @@ itself does not use `@Parameter`.
 | Internal block height | 0...80 mm | 0 | `height_internal` | all |
 | Lid direction | Up, Down, Left, Right | Left | `Lid_Orientation` | all |
 | Lip grips | None, Along X, Along Y, Along X and Y | Along X and Y | `Lip_Grips` | all |
-| Lid clearance | 0.05...0.6 mm, step 0.05 | 0.20 | side gap of the lid (original value 0.45) | Lid, Bin and lid (open) |
+| Lid clearance | 0.05...0.6 mm, step 0.05 | 0.20 | side gap of the lid (original value 0.45) | all |
 | Lid chamfer | 0.8...2.0 mm, step 0.1 | 1.4 | rise of the slot roof and the lid chamfer (original value 0.8) | all |
+| Detent interference | 0.05...0.6 mm, step 0.05 | 0.25 | overlap of the detent bumps with the lid edge (original value 0.15) | all |
 | Interior style | Minimal, Partially raised | Minimal | `Interior_Style` | Bin, Bin and lid (open) |
 | Compartments | Equal grid, Two sizes | Equal grid | `div_pattern` | Bin, Bin and lid (open) |
 | Dividers X | 0...12 | 6 | `divx` | Bin, Bin and lid (open) |
@@ -157,11 +186,11 @@ itself does not use `@Parameter`.
 
 All parameters are declared in the project, so a value is shared between the tabs that show it.
 Cadova lists a parameter on a tab only when that model reads it, and on every tab when the
-project body reads it. The settings the lid depends on are read in the project body; the
-bin-only settings are read only inside the `Bin` and `Bin and lid (open)` models, since the lid
-geometry does not depend on them. Lid clearance is read inside the `Lid` and
-`Bin and lid (open)` models and Lid chamfer inside all three, so they are listed last on their
-tabs. The conditional parameters are read only while they apply.
+project body reads it. The settings the lid depends on, including the three lid fit controls
+(which shape both parts), are read in the project body, so every tab lists the lid fit controls
+right after Lip grips; the bin-only settings are read only inside the `Bin` and
+`Bin and lid (open)` models, since the lid geometry does not depend on them. The conditional
+parameters are read only while they apply.
 Internal block height is clamped to the bin's storage height by `validated()`.
 
 The catalog can be printed natively, the way Cadova's customizer page asks for it: write a
@@ -254,11 +283,14 @@ the cases investigated). Rounding fixes that, and it adds a noise floor of rough
 is `lid_2x2x3_fit_sweep`, which `generate.py` keeps in full precision (`FULL_PRECISION`)
 because float32 rounding made the import drop a wedge there.
 
-The suite currently has 81 tests (`swift build --skip-update && swift test --skip-update`), all passing. `ProductionTests`
+The suite currently has 86 tests (`swift build --skip-update && swift test --skip-update`), all passing. `ProductionTests`
 build the default configuration with `cornerSegments == nil` and Cadova's default segmentation,
 as the exporter does, and check volume, bounds, symmetric difference and the closed bin/lid
 interference against the references (with the original lid fit preset); `LidFitTests` measure
-the lid clearance, the slot roof and the tongue chamfer by ray casts on the closed assembly; it also checks that `divMultiple` of 0 or less is clamped. The closed bin and
+the lid clearance, the slot roof and the tongue chamfer by ray casts on the closed assembly;
+`DetentTests` measure the detent (the bump's overlap with the plate edge, its plan-view angles,
+the closed seat in all four lid directions, and a slide sweep of the overlap) by ray casts and
+intersection volumes. `ValidationTests` also checks that `divMultiple` of 0 or less is clamped. The closed bin and
 lid assemblies have no OpenSCAD CLI reference (`lid-bin.scad` uses them for preview only), so
 the lid placement there is checked by footprint, shift and overlap tests instead.
 
@@ -273,6 +305,8 @@ the lid placement there is checked by footprint, shift and overlap tests instead
   (`bin_1x1x2_nogrips_div0`, `bin_slice_2x2x3`, `bin_slice_1x1x2_up`) come from a patched copy of
   `lid-bin.scad` that `generate.py` writes to `Reference/generated/` (git-ignored); the original
   file is not edited.
-- In the closed position the lid and the bin overlap by about 1.4 mm^3 (the lid tabs against the
-  lip). This is present in the original design, not introduced by the port. The two parts are
+- In the closed position the lid and the bin overlap by about 1.4 mm^3 (1.34 mm^3 with the
+  default lid fit): a 0.1 mm wide sliver at the open end, where the lid's rim meets the bin wall
+  that `gf_bin_lid_lip_mask`, moved by `lid_lip_fit_tolerance`, leaves standing. This is present
+  in the original design, not introduced by the port. The two parts are
   exported as separate bodies, so the assembly volume is the sum of both.

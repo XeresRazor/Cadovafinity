@@ -106,7 +106,7 @@ struct CustomizerCatalogTests {
         try Self.requireExecutable()
         let catalog = try Self.catalog()
         #expect(catalog.models.map(\.name) == ["Bin", "Lid", "Bin and lid (open)"])
-        #expect(catalog.author == "smkent (original design), ported by XeresRazor")
+        #expect(catalog.author == "smkent (original design), ported by David Green")
         #expect(catalog.license == "CC BY 4.0")
         #expect(catalog.title == "Gridfinity Lidded Bin")
     }

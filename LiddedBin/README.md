@@ -15,7 +15,7 @@ The original is licensed under CC BY 4.0: <https://creativecommons.org/licenses/
 
 This package is a port with changes: it is written in Swift with Cadova instead of OpenSCAD, and
 the custom compartment pockets feature was dropped (see "Known differences"). Models exported by
-`lidded-bin` carry the metadata author "smkent (original design), ported by XeresRazor" and
+`lidded-bin` carry the metadata author "smkent (original design), ported by David Green" and
 license "CC BY 4.0", and the metadata description names the original design and its license.
 
 ## Dependency

@@ -28,7 +28,7 @@ await Project(packageRelative: "Models") {
         Original OpenSCAD design: "Gridfinity Bins with Lids" by smkent (GitHub) / bulbasaur0 \
         (Printables), CC BY 4.0. This is a port to Swift and Cadova.
         """,
-        author: "smkent (original design), ported by XeresRazor",
+        author: "smkent (original design), ported by David Green",
         license: "CC BY 4.0"
     )
 

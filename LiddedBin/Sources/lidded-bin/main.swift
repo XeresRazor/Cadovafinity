@@ -104,12 +104,12 @@ await Project(packageRelative: "Models") {
     @Parameter("Compartment layout", description: "An equal grid, or compartments of two sizes (div_pattern)")
     var compartmentPattern = defaults.compartmentPattern
 
-    @Parameter("Compartments X", in: LiddedBinLimits.dividers, unit: "compartments",
-               description: "Number of compartments along X (divx). 1 is a single open compartment; each extra compartment adds a divider. 0 gives the same open bin.")
+    @Parameter("Compartments X", in: LiddedBinLimits.compartments, unit: "compartments",
+               description: "Number of compartments along X (divx). 1 is a single open compartment; each extra compartment adds a divider.")
     var divX = defaults.divX
 
-    @Parameter("Compartments Y", in: LiddedBinLimits.dividers, unit: "compartments",
-               description: "Number of compartments along Y (divy). 1 is a single open compartment; each extra compartment adds a divider. 0 gives the same open bin.")
+    @Parameter("Compartments Y", in: LiddedBinLimits.compartments, unit: "compartments",
+               description: "Number of compartments along Y (divy). 1 is a single open compartment; each extra compartment adds a divider.")
     var divY = defaults.divY
 
     @Parameter("Size multiple", in: LiddedBinLimits.divMultiple, step: 0.5,

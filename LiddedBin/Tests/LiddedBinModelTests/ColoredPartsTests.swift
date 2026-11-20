@@ -298,9 +298,8 @@ struct ColoredPartsTests {
     }
 
     @Test func `a bin without dividers has no dividers part and its body is the whole bin`() async throws {
-        // No pockets (a hollow bin) for a 0, and one compartment for 1 by 1, in both patterns
+        // One compartment for 1 by 1, in both patterns
         let edits: [(String, (inout LiddedBinConfiguration) -> Void)] = [
-            ("divX 0", { $0.divX = 0 }), ("divY 0", { $0.divY = 0 }),
             ("1 by 1", { $0.divX = 1; $0.divY = 1 }),
             ("multisize 1 by 1", { $0.compartmentPattern = .multiSize; $0.divX = 1; $0.divY = 1 }),
         ]
@@ -324,13 +323,13 @@ struct ColoredPartsTests {
             #expect(assembly.map(\.name) == [LiddedBinDesign.binBodyPartName, LiddedBinDesign.lidCenterPartName,
                                              LiddedBinDesign.lidRimPartName], "\(name)")
         }
-        #expect(production { $0.divX = 0 }.binDividers(pockets: nil) == nil)
+        // No pockets (the hollow cut of the bin slice) has no dividers either
+        #expect(production().binDividers(pockets: nil) == nil)
     }
 
     /// The compartment counts are documented as: 1 is a single compartment with no dividers, 2 adds
     /// one divider, and each further compartment adds another (N compartments, N - 1 dividers).
-    /// 0 gives the same open bin as 1, up to the interior corners.
-    @Test func `compartment counts give one fewer divider and 0 and 1 give none`() async throws {
+    @Test func `compartment counts give one fewer divider and a count of 1 gives none`() async throws {
         // With one compartment along Y, every divider is a separate wall
         for n in 2...5 {
             let d = production { $0.divX = n; $0.divY = 1 }
@@ -340,7 +339,7 @@ struct ColoredPartsTests {
             }
             #expect(walls == n - 1, "\(n) compartments: \(walls) dividers")
         }
-        for (x, y) in [(0, 0), (1, 1), (0, 1), (1, 0), (1, 6), (6, 1)] where x < 2 && y < 2 {
+        for (x, y) in [(1, 1)] {
             let parts = try await partInfo(production { $0.divX = x; $0.divY = y }.coloredGeometry(for: .bin, colors: .defaults))
             #expect(!parts.contains { $0.name == LiddedBinDesign.dividersPartName }, "\(x) by \(y)")
         }
@@ -349,23 +348,22 @@ struct ColoredPartsTests {
         #expect(alongY.contains { $0.name == LiddedBinDesign.dividersPartName })
     }
 
-    /// 0 and 1 compartments give nearly the same bin. A single compartment keeps a thin layer of
-    /// material (about 0.4 mm) on the inside of the wall, which 0 cuts away: measured for the 2x2x3
-    /// default bin at 64 segments, 0 is 23118 mm^3, 1 is 24804 mm^3, and they differ by 1686 mm^3
-    /// (6.8 percent of the volume), all of it in a ring along the wall between z 6.1 and 20.9.
-    @Test func `0 and 1 compartments differ only in a thin layer along the wall`() async throws {
-        let zero = production { $0.divX = 0; $0.divY = 0 }.geometry(for: .bin).withSegmentation(count: 64)
-        let one = production { $0.divX = 1; $0.divY = 1 }.geometry(for: .bin).withSegmentation(count: 64)
-        let difference = Union {
-            zero.subtracting { one }
-            one.subtracting { zero }
+    /// A count of 0 never reaches the model through the customizer input: `validated()` raises it
+    /// to 1, so the bin is the single compartment of 1 with no Dividers part.
+    @Test func `a customizer count of 0 builds the single compartment of 1`() async throws {
+        var zero = LiddedBinInput(); zero.divX = 0; zero.divY = 1
+        var one = LiddedBinInput(); one.divX = 1; one.divY = 1
+        #expect(zero.configuration.divX == 1)
+        var zeroConfig = zero.configuration, oneConfig = one.configuration
+        zeroConfig.cornerSegments = 16; oneConfig.cornerSegments = 16
+        let zeroDesign = LiddedBinDesign(zeroConfig), oneDesign = LiddedBinDesign(oneConfig)
+        let parts = try await partInfo(zeroDesign.coloredGeometry(for: .bin, colors: .defaults))
+        #expect(!parts.contains { $0.name == LiddedBinDesign.dividersPartName })
+        let (a, b) = try await ModelFileGenerator.evaluate { evaluator in
+            (await evaluator.measurements(of: zeroDesign.geometry(for: .bin)).volume,
+             await evaluator.measurements(of: oneDesign.geometry(for: .bin)).volume)
         }
-        let (a, b, d) = try await ModelFileGenerator.evaluate { evaluator in
-            (await evaluator.measurements(of: zero).volume, await evaluator.measurements(of: one).volume,
-             await evaluator.measurements(of: difference).volume)
-        }
-        #expect(abs(a - 23118) < 20 && abs(b - 24804) < 20 && abs(d - 1686) < 20, "\(a) \(b) \(d)")
-        #expect(a < b && d / b < 0.1)
+        #expect(abs(a - b) < 1e-6, "\(a) \(b)")
     }
 
     struct PartInfo: Sendable {

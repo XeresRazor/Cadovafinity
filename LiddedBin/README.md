@@ -169,8 +169,7 @@ intersection and the symmetric difference). The dividers are the bin inside the 
 the pockets (in plan view, the rectangle the pockets tile minus the pockets), within the interior
 footprint from the pocket floor up, minus the wall. So the color changes at the pocket floor, a
 divider that stands on the ridge between two feet takes the ridge's top with it, and a ridge that
-crosses the middle of a compartment stays the body color. A bin with no dividers (Compartments X or Y of 0, or
-both 1) has only the Bin body part. `.binSlice` is one Bin body part.
+crosses the middle of a compartment stays the body color. A bin with no dividers (Compartments X and Y both 1) has only the Bin body part. `.binSlice` is one Bin body part.
 
 The lid center is the plate's plan outline inset by the band width, extruded over the plate
 thickness, minus the detent notches; the Lid rim and lip part is the rest of the lid. So the lid
@@ -234,8 +233,8 @@ itself does not use `@Parameter`.
 | Detent interference | 0.10...0.40 mm, step 0.05 | 0.25 | overlap of the bump with the lid's edge; more is a firmer click and a stiffer lid (original value 0.15) | all |
 | Interior style | Minimal, Partially raised | Minimal | `Interior_Style` | Bin and the three assembly tabs |
 | Compartment layout | Equal grid, Two sizes | Equal grid | `div_pattern` | Bin and the three assembly tabs |
-| Compartments X | 0...12 compartments | 6 | `divx`: the number of compartments along X. 1 is a single open compartment, 2 adds one divider, N adds N - 1; 0 gives the same open bin | Bin and the three assembly tabs |
-| Compartments Y | 0...12 compartments | 6 | `divy`: the number of compartments along Y, counted as Compartments X | Bin and the three assembly tabs |
+| Compartments X | 1...12 compartments | 6 | `divx`: the number of compartments along X. 1 is a single open compartment, 2 adds one divider, N adds N - 1 | Bin and the three assembly tabs |
+| Compartments Y | 1...12 compartments | 6 | `divy`: the number of compartments along Y, counted as Compartments X | Bin and the three assembly tabs |
 | Size multiple | 1...5, step 0.5 | 2 | `div_multiple` | Bin and the three assembly tabs, when Compartment layout is Two sizes |
 | Bin color | color picker | `#587A9E` | none (colors the Bin body part) | Bin and the three assembly tabs |
 | Divider color | color picker | `#E8912D` | none (colors the Dividers part) | Bin and the three assembly tabs |
@@ -346,7 +345,7 @@ the cases investigated). Rounding fixes that, and it adds a noise floor of rough
 is `lid_2x2x3_fit_sweep`, which `generate.py` keeps in full precision (`FULL_PRECISION`)
 because float32 rounding made the import drop a wedge there.
 
-The suite currently has 109 tests (`swift build --skip-update && swift test --skip-update`), all passing. `ProductionTests`
+The suite currently has 110 tests (`swift build --skip-update && swift test --skip-update`), all passing. `ProductionTests`
 build the default configuration with `cornerSegments == nil` and Cadova's default segmentation,
 as the exporter does, and check volume, bounds, symmetric difference and the closed bin/lid
 interference against the references (with the original lid fit preset); `LidFitTests` measure
@@ -358,7 +357,7 @@ default bin, the production segmentation, a 3x2x3 bin with the lid up, the origi
 multisize bin, and for the lid also a clearance of 0.10 and a 1x1 bin), that the dividers start
 at the pocket floor and stay clear of the wall, the lid's edge band (its width against the measured
 tongue foot for three clearances, the center's bounds, ray casts across every side and a corner,
-and the band volumes), the hollow bin without a Dividers part, the part names and colors of every
+and the band volumes), the single-compartment bin without a Dividers part, the part names and colors of every
 colored model, their placement against the uncolored models, and the names and colors in the
 exported 3MF of the separated and the closed assemblies.
 `ValidationTests` also checks that `divMultiple` of 0 or less is clamped. The closed bin and
@@ -369,16 +368,13 @@ the lid placement there is checked by footprint, shift and overlap tests instead
 
 - Custom compartment pockets are dropped: the `custom` value of `div_pattern` and its text
   notice are not ported, because `Text` cannot use system fonts in the planned web customizer.
-- Compartments X or Y (`divX`, `divY`) set to 0 (grid pattern) gives an open bin whose interior is
-  cut as one space, whatever the other axis is set to. The original OpenSCAD model leaves it
-  solid there, because the interior cut intersects with an empty
-  `children()` and cuts nothing. The port deliberately deviates: with no pockets it cuts the whole
-  interior, so `binSlice` is a hollow ring. A count of 1 also gives one compartment, but it is not
-  the same bin: the single pocket stops at the 1.6 mm wall line, while the cut for 0 reaches about
-  0.45 mm further, so the 0 bin has thinner walls. For the default 2x2x3 bin (64 segments) the 0
-  bin is 23,118 mm^3 and the 1 bin is 24,804 mm^3, a difference of 1,686 mm^3 (6.8 percent).
-  2 is the smallest count that adds a divider; N compartments have N - 1 dividers. The references for these cases
-  (`bin_1x1x2_nogrips_div0`, `bin_slice_2x2x3`, `bin_slice_1x1x2_up`) come from a patched copy of
+- The bin slice (`binSlice`) is a hollow ring: the port cuts the whole interior when there are no
+  pockets. The original OpenSCAD model produces a solid block there because the interior cut
+  intersects with an empty `children()` and cuts nothing.
+- The customizer offers 1 to 12 compartments per axis; the original model's `divx` and `divy` of 0
+  (a solid block) is not offered. Direct use of the model API with a count of 0 gives the hollow cut
+  that `binSlice` uses. The references for it (`bin_1x1x2_nogrips_div0`, `bin_slice_2x2x3`,
+  `bin_slice_1x1x2_up`) come from a patched copy of
   `lid-bin.scad` that `generate.py` writes to `Reference/generated/` (git-ignored); the original
   file is not edited.
 - In the closed position the lid and the bin overlap by about 1.4 mm^3 (1.34 mm^3 with the

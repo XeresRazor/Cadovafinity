@@ -3,9 +3,9 @@ import GridfinityRebuilt
 /// The ranges the model accepts. The customizer offers the same ranges, so a visitor cannot leave them.
 public struct LiddedBinLimits: Sendable {
     public static let gridSize = 1...6
-    /// The number of compartments along X or Y (`divx`, `divy`; the name mirrors OpenSCAD). N
-    /// compartments have N - 1 dividers.
-    public static let dividers = 0...12
+    /// The number of compartments along X or Y (`divx`, `divy`). 1 is a single open compartment and
+    /// N compartments have N - 1 dividers.
+    public static let compartments = 1...12
     public static let divMultiple = 1.0...5.0
     /// The side gap between the lid and the slot face, in mm. A 0.4 mm nozzle cannot hold a smaller gap.
     public static let lidClearance = 0.10...0.6
@@ -37,8 +37,8 @@ public extension LiddedBinConfiguration {
         var c = self
         c.gridX = min(max(c.gridX, LiddedBinLimits.gridSize.lowerBound), LiddedBinLimits.gridSize.upperBound)
         c.gridY = min(max(c.gridY, LiddedBinLimits.gridSize.lowerBound), LiddedBinLimits.gridSize.upperBound)
-        c.divX = min(max(c.divX, LiddedBinLimits.dividers.lowerBound), LiddedBinLimits.dividers.upperBound)
-        c.divY = min(max(c.divY, LiddedBinLimits.dividers.lowerBound), LiddedBinLimits.dividers.upperBound)
+        c.divX = min(max(c.divX, LiddedBinLimits.compartments.lowerBound), LiddedBinLimits.compartments.upperBound)
+        c.divY = min(max(c.divY, LiddedBinLimits.compartments.lowerBound), LiddedBinLimits.compartments.upperBound)
         c.divMultiple = min(max(c.divMultiple, LiddedBinLimits.divMultiple.lowerBound), LiddedBinLimits.divMultiple.upperBound)
         c.lidClearance = min(max(c.lidClearance, LiddedBinLimits.lidClearance.lowerBound), LiddedBinLimits.lidClearance.upperBound)
         c.lidChamfer = min(max(c.lidChamfer, LiddedBinLimits.lidChamfer.lowerBound), LiddedBinLimits.lidChamfer.upperBound)

@@ -22,16 +22,18 @@ struct BinBodyTests {
         try await expectMatchesReference("bin_1x1x2_nogrips_div2", design.binSolid(pockets: design.pockets()), references: refs)
     }
 
-    /// Deliberate deviation from OpenSCAD: its empty `children()` quirk leaves the bin solid
-    /// (21418.9 mm^3), but the port cuts the whole interior. The reference is generated from a
-    /// patched copy of lid-bin.scad (see Reference/generate.py, HOLLOW_PATCH).
-    @Test func `zero divisions give a hollow bin, deliberately unlike OpenSCAD`() async throws {
+    /// Tests the hollow cut used by the bin slice (and by direct API use with a count of 0), which
+    /// the customizer does not offer. Deliberate deviation from OpenSCAD: its empty `children()`
+    /// quirk leaves the bin solid (21418.9 mm^3), but the port cuts the whole interior. The
+    /// reference is generated from a patched copy of lid-bin.scad (see Reference/generate.py,
+    /// HOLLOW_PATCH).
+    @Test func `the hollow cut of the bin slice, deliberately unlike OpenSCAD`() async throws {
         let design = design { $0.lipGrips = .none; $0.gridX = 1; $0.gridY = 1; $0.gridZ = 2; $0.divX = 0; $0.divY = 0 }
         #expect(design.pockets() == nil)
         try await expectMatchesReference("bin_1x1x2_nogrips_div0", design.binSolid(pockets: nil), references: refs)
     }
 
-    @Test func `hollow bin has less volume than the same bin with two compartments`() async throws {
+    @Test func `hollow cut has less volume than the same bin with two compartments`() async throws {
         let hollow = design { $0.lipGrips = .none; $0.gridX = 1; $0.gridY = 1; $0.gridZ = 2; $0.divX = 0; $0.divY = 1 }
         let divided = design { $0.lipGrips = .none; $0.gridX = 1; $0.gridY = 1; $0.gridZ = 2; $0.divX = 2; $0.divY = 1 }
         let hollowVolume = try await measure(hollow.binSolid(pockets: hollow.pockets())).volume

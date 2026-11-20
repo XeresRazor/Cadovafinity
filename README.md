@@ -11,7 +11,7 @@ The design is a port of smkent's OpenSCAD model "Gridfinity Bins with Lids" to S
 ## What you can adjust
 
 - Grid width and depth (1 to 6 cells), and the height as 7 mm units, internal height or overall height.
-- Compartment layout: an equal grid, or compartments of two sizes. Compartments X and Y set the number of compartments along each axis: 1 is a single open compartment, and 2 is the smallest count that adds a divider (N compartments have N minus 1 dividers). 0 gives the same open bin.
+- Compartment layout: an equal grid, or compartments of two sizes. Compartments X and Y set the number of compartments along each axis: 1 is a single open compartment, and 2 is the smallest count that adds a divider (N compartments have N minus 1 dividers).
 - Lip grips (none, along X, along Y, both), lid direction (four ways) and the interior style.
 - Five downloads: **Bin**, **Lid**, **Bin and lid (closed)**, **Bin and lid (separated)** (side by side on the build plate, ready to import into a slicer) and **Bin and lid (open)**.
 - Colors for multi-color or multi-filament printing: four color pickers (bin, dividers, lid rim and lip, lid center). Each model downloads as separate named parts in the 3MF, so a slicer can print the dividers or the lid rim in their own color.
@@ -24,7 +24,8 @@ The fit defaults are starting values chosen from measurements of the model, then
 
 ## Differences from the original
 
-- `divx` or `divy` set to 0 gives an open bin whose interior is cut as one space. The original model leaves it solid. 1 also gives a single compartment, with walls about 0.45 mm thicker than the 0 bin (about 1,690 mm³, 7%, more material for the default 2x2x3 bin). 2 is the smallest count that adds a divider.
+- The customizer offers 1 to 12 compartments per axis. The original model's `divx` and `divy` of 0 (a solid block) is not offered.
+- The bin slice (`binSlice`) is a hollow ring. The original OpenSCAD model produces a solid block there because of an empty-children quirk.
 - The lid fit is tighter, the slot roof and lid chamfer are larger, and the detent is a seated catch. The `openSCADOriginal` preset in the code reproduces the original geometry exactly, and the reference tests use it.
 - The custom compartment pattern, which needs editing the source, is not included. The web page cannot offer it.
 
@@ -32,7 +33,7 @@ The fit defaults are starting values chosen from measurements of the model, then
 
 | Folder | Contents |
 |---|---|
-| [`LiddedBin/`](LiddedBin/README.md) | The lidded bin: model library, the `lidded-bin` executable that defines the customizer, and the OpenSCAD reference generator. 103 tests. |
+| [`LiddedBin/`](LiddedBin/README.md) | The lidded bin: model library, the `lidded-bin` executable that defines the customizer, and the OpenSCAD reference generator. 110 tests. |
 | [`GridfinityRebuilt/`](GridfinityRebuilt/README.md) | A Swift/Cadova port of the core of [gridfinity-rebuilt-openscad](https://github.com/kennetek/gridfinity-rebuilt-openscad), plus `GridfinityTestSupport`, the helpers that compare geometry with OpenSCAD output. 33 tests. |
 | `docs/superpowers/` | Design notes, specs and implementation plans. |
 | `.github/workflows/customizer.yml` | Builds the customizer and publishes it to GitHub Pages on every push to `main`. |

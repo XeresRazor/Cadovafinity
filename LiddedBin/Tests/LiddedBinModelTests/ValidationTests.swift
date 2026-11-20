@@ -28,11 +28,23 @@ struct ValidationTests {
         var c = LiddedBinConfiguration()
         c.divX = -4; c.divY = 500; c.divMultiple = 0
         let v = c.validated()
-        #expect(v.divX == LiddedBinLimits.dividers.lowerBound)
-        #expect(v.divY == LiddedBinLimits.dividers.upperBound)
+        #expect(v.divX == 1)
+        #expect(LiddedBinLimits.compartments == 1...12)
+        #expect(v.divX == LiddedBinLimits.compartments.lowerBound)
+        #expect(v.divY == LiddedBinLimits.compartments.upperBound)
         #expect(v.divMultiple == LiddedBinLimits.divMultiple.lowerBound)
         c.divMultiple = 99
         #expect(c.validated().divMultiple == LiddedBinLimits.divMultiple.upperBound)
+    }
+
+    @Test func `a compartment count of 0 becomes 1 and in-range counts are unchanged`() {
+        var c = LiddedBinConfiguration()
+        c.divX = 0; c.divY = 0
+        #expect(c.validated().divX == 1 && c.validated().divY == 1)
+        for n in 1...12 {
+            c.divX = n; c.divY = n
+            #expect(c.validated().divX == n && c.validated().divY == n)
+        }
     }
 
     @Test func `lid clearance is clamped`() {

@@ -160,8 +160,8 @@ the geometry and are not part of `LiddedBinConfiguration` or `LiddedBinInput`.
 |---|---|---|---|
 | Bin body | The outer wall with the stacking lip and the lid slot, the detent bumps, the floor under the pockets, the base feet with the ridges between them, and the ring between the pockets and the wall | `binBody` | slate blue-grey `#587A9E` |
 | Dividers | The walls between the compartments, from the pocket floor up | `dividers` | orange `#E8912D` |
-| Lid rim and lip | The raised rim at the lid's open end and the tongue on top of the plate edge that slides under the slot roof, with the detent notches | `lidRim` | slate blue-grey `#587A9E`, as the bin body |
-| Lid center | The flat plate inside them, with the detent notches | `lidCenter` | light grey `#C8CDD6` |
+| Lid rim and lip | The raised rim at the lid's open end, the tongue on top of the plate edge that slides under the slot roof, and the edge band: the plate within the band width of its outline on every side (the long sides, both ends and the rounded corners), through the full plate thickness, with the detent notches | `lidRim` | slate blue-grey `#587A9E`, as the bin body |
+| Lid center | The flat plate inside the edge band, through the plate thickness | `lidCenter` | light grey `#C8CDD6` |
 
 The bin's parts are the bin, and the lid's parts are the lid: each pair is an exact partition of
 the uncolored piece, with no overlap and no gap (`ColoredPartsTests` checks the volumes, the
@@ -171,6 +171,17 @@ footprint from the pocket floor up, minus the wall. So the color changes at the 
 divider that stands on the ridge between two feet takes the ridge's top with it, and a ridge that
 crosses the middle of a compartment stays the body color. A bin with no dividers (Compartments X or Y of 0, or
 both 1) has only the Bin body part. `.binSlice` is one Bin body part.
+
+The lid center is the plate's plan outline inset by the band width, extruded over the plate
+thickness, minus the detent notches; the Lid rim and lip part is the rest of the lid. So the lid
+shows the rim color all round its edge from above, from the sides and from below, and the center
+color only inside the band. The band width is the width of the tongue's foot on the long sides,
+from the plate edge to the tongue's inner face, so the band lies under the tongue there: the lip's
+inner face in the wall profile (`dWall2 - dClear`, 2.596 mm in from the outer wall face) less the
+slot face (1.2 mm) and the Lid clearance. That is 1.2 mm at the default clearance of 0.20 (1.3 at
+0.10, 0.8 at the 0.6 maximum): the band follows Lid clearance, while the center itself stays the
+same size. The smallest lid (1 by 1) still has a 36.3 mm center, so the Lid center part is never
+empty.
 
 Each part is a separate object in the exported 3MF, named as above, with its color as a 3MF
 material color group (`m:colorgroup`). The parts keep their positions, so they sit together as
@@ -335,7 +346,7 @@ the cases investigated). Rounding fixes that, and it adds a noise floor of rough
 is `lid_2x2x3_fit_sweep`, which `generate.py` keeps in full precision (`FULL_PRECISION`)
 because float32 rounding made the import drop a wedge there.
 
-The suite currently has 103 tests (`swift build --skip-update && swift test --skip-update`), all passing. `ProductionTests`
+The suite currently has 109 tests (`swift build --skip-update && swift test --skip-update`), all passing. `ProductionTests`
 build the default configuration with `cornerSegments == nil` and Cadova's default segmentation,
 as the exporter does, and check volume, bounds, symmetric difference and the closed bin/lid
 interference against the references (with the original lid fit preset); `LidFitTests` measure
@@ -344,9 +355,12 @@ the lid clearance, the slot roof and the tongue chamfer by ray casts on the clos
 the closed seat in all four lid directions, and a slide sweep of the overlap) by ray casts and
 intersection volumes. `ColoredPartsTests` checks the color split: the exact partitions (for the
 default bin, the production segmentation, a 3x2x3 bin with the lid up, the original preset and a
-multisize bin), that the dividers start at the pocket floor and stay clear of the wall, the
-hollow bin without a Dividers part, the part names and colors of every colored model, their
-placement against the uncolored models, and the names and colors in an exported 3MF.
+multisize bin, and for the lid also a clearance of 0.10 and a 1x1 bin), that the dividers start
+at the pocket floor and stay clear of the wall, the lid's edge band (its width against the measured
+tongue foot for three clearances, the center's bounds, ray casts across every side and a corner,
+and the band volumes), the hollow bin without a Dividers part, the part names and colors of every
+colored model, their placement against the uncolored models, and the names and colors in the
+exported 3MF of the separated and the closed assemblies.
 `ValidationTests` also checks that `divMultiple` of 0 or less is clamped. The closed bin and
 lid assemblies have no OpenSCAD CLI reference (`lid-bin.scad` uses them for preview only), so
 the lid placement there is checked by footprint, shift and overlap tests instead.

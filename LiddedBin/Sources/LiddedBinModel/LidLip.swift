@@ -87,10 +87,14 @@ extension LiddedBinDesign {
 
     /// gf_bin_rounded_rect. `radius` is OpenSCAD's third argument `r` (default `r_fo1`).
     func roundedRect(height: Double, addSize: Double = 0, radius: Double? = nil) -> any Geometry3D {
-        roundedRectangle(
+        roundedRect2D(addSize: addSize, radius: radius).extruded(height: height)
+    }
+
+    /// The plan outline of `roundedRect`.
+    func roundedRect2D(addSize: Double = 0, radius: Double? = nil) -> any Geometry2D {
+        roundedRectangle2D(
             length: gridX * d.lGrid + addSize + 0.005,
             width: gridY * d.lGrid + addSize + 0.005,
-            height: height,
             radius: (radius ?? d.rFo1) / 2 + 0.001
         )
     }

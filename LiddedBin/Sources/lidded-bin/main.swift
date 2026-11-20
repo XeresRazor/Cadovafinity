@@ -89,10 +89,10 @@ await Project(packageRelative: "Models") {
     @Parameter("Divider color", description: "The color of the dividers between the compartments")
     var dividerColor = defaultColors.dividers
 
-    @Parameter("Lid rim color", description: "The color of the lid's raised rim and the lip that slides in the bin's slot")
+    @Parameter("Lid rim color", description: "The color of the lid's raised rim, the lip that slides in the bin's slot and the band around the edge of the lid")
     var lidRimColor = defaultColors.lidRim
 
-    @Parameter("Lid center color", description: "The color of the flat center of the lid")
+    @Parameter("Lid center color", description: "The color of the flat center of the lid, inside the edge band")
     var lidCenterColor = defaultColors.lidCenter
 
     // Bin only: declared here so that the Bin and assembly tabs share them, read only in

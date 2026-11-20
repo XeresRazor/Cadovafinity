@@ -35,8 +35,8 @@ struct ColoredPartsTests {
     }
 
     /// The volume in mm^3 under which an intersection or a symmetric difference counts as empty.
-    /// The parts are exact by construction (the body is the bin minus the dividers, the lid
-    /// center the plate minus the rim and lip), but their boundary runs along faces of the bin
+    /// The parts are exact by construction (the body is the bin minus the dividers, the lid rim
+    /// and lip the lid minus the center), but their boundary runs along faces of the bin
     /// (the pocket walls, the feet), and Manifold's booleans on coincident faces leave a residue:
     /// measured from 1e-17 to 5e-14 mm^3 for most cases and up to 7.3e-8 mm^3 for the 3x2x3 bin
     /// with the lid up, where even `(bin - dividers) ∩ dividers`, empty by definition, measures
@@ -84,6 +84,20 @@ struct ColoredPartsTests {
         ]
     }()
 
+    /// The lid cases: the bin cases plus a tighter clearance and the smallest lid.
+    static let lidCases: [Case] = {
+        var tight = LiddedBinConfiguration()
+        tight.cornerSegments = 16
+        tight.lidClearance = 0.10
+        var small = LiddedBinConfiguration()
+        small.cornerSegments = 16
+        small.gridX = 1; small.gridY = 1
+        return cases + [
+            Case(name: "2x2x3 clearance 0.10", configuration: tight),
+            Case(name: "1x1x3 defaults", configuration: small),
+        ]
+    }()
+
     @Test(arguments: cases)
     func `bin body and dividers split the bin exactly`(_ c: Case) async throws {
         let d = LiddedBinDesign(c.configuration)
@@ -93,7 +107,7 @@ struct ColoredPartsTests {
         expectExactSplit(s, c.name)
     }
 
-    @Test(arguments: cases)
+    @Test(arguments: lidCases)
     func `lid rim and lip and lid center split the lid exactly`(_ c: Case) async throws {
         let d = LiddedBinDesign(c.configuration)
         // gf_bin_lid as lid-bin.scad builds it: the rim, plus the plate and the tongue minus the
@@ -103,17 +117,131 @@ struct ColoredPartsTests {
             Union { d.lidPlateSlab(); d.lidTongue() }.subtracting { d.lidTabs(adjust: true) }
         }
         let s = try await split(lid, d.lidRimAndLip(), d.lidCenter())
+        print("lid split \(c.name): rim and lip \(s.a) center \(s.b) lid \(s.whole) overlap \(s.overlap) sym \(s.symmetricDifference)")
         expectExactSplit(s, c.name)
     }
 
-    @Test func `the lid center is the flat plate`() async throws {
-        // The center spans exactly the plate thickness; the tongue below it and the rim above it
-        // belong to the other part.
-        let d = production()
+    /// The lid's plate edge and the tongue's foot along the ray across the +y side at x = 0: the
+    /// plate edge (the slab's exit at mid plate thickness) and the width of the tongue's foot,
+    /// from the plate edge to the tongue's inner face just above the plate top.
+    func plateEdgeAndFoot(_ d: LiddedBinDesign) async throws -> (edge: Double, foot: Double) {
+        let top = d.lidPlateZ + d.fit.thickness
+        let slab = d.lidPlateSlab().withSegmentation(count: 64)
+        let tongue = d.lidTongue().withSegmentation(count: 64)
+        return try await ModelFileGenerator.evaluate { evaluator in
+            let edge = await evaluator.surfaces(of: slab, from: Vector3D(0, 0, top - d.fit.thickness / 2), in: .positiveY)
+                .last { $0.transition == .exiting }?.position.y ?? .nan
+            let inner = await evaluator.surfaces(of: tongue, from: Vector3D(0, 0, top + 0.001), in: .positiveY)
+                .first { $0.transition == .entering }?.position.y ?? .nan
+            return (edge, edge - inner)
+        }
+    }
+
+    @Test(arguments: [0.10, 0.20, 0.30])
+    func `the edge band is the width of the tongue's foot and follows the lid clearance`(clearance: Double) async throws {
+        let d = production { $0.lidClearance = clearance }
+        let measured = try await plateEdgeAndFoot(d)
+        print("edge band at clearance \(clearance): design \(d.lidEdgeBand) measured foot \(measured.foot)")
+        #expect(abs(d.lidEdgeBand - measured.foot) < 0.02, "\(clearance): \(d.lidEdgeBand) vs \(measured.foot)")
+    }
+
+    @Test(arguments: [lidCases[0], lidCases[2], lidCases[3], lidCases[6]])
+    func `the lid center is the plate inside the edge band`(_ c: Case) async throws {
+        // The center spans exactly the plate thickness, and its bounds are those of the plate
+        // inset by the width of the tongue's foot (measured, not taken from the design) on all
+        // four sides.
+        let d = LiddedBinDesign(c.configuration)
+        let w = try await plateEdgeAndFoot(d).foot
         let center = try await measure(d.lidCenter(), segments: 64)
-        let plateZ = d.storageHeight + d.d.hBase - d.fit.thickness - d.fit.vPosTolerance
-        #expect(abs(center.min.z - plateZ) < 1e-6)
-        #expect(abs(center.max.z - (plateZ + d.fit.thickness)) < 1e-6)
+        let plate = try await measure(d.lidPlateSlab(), segments: 64)
+        #expect(abs(center.min.z - d.lidPlateZ) < 1e-6, "\(c.name)")
+        #expect(abs(center.max.z - (d.lidPlateZ + d.fit.thickness)) < 1e-6, "\(c.name)")
+        let insets = [center.min.x - plate.min.x, plate.max.x - center.max.x,
+                      center.min.y - plate.min.y, plate.max.y - center.max.y]
+        for inset in insets {
+            #expect(abs(inset - w) < 0.05, "\(c.name): insets \(insets), foot \(w)")
+        }
+    }
+
+    /// Where a ray from outside the lid toward its middle, at mid plate thickness, meets the two
+    /// parts: the first entry of the rim and lip part, the first entry of the center part, and the
+    /// last exit of the rim and lip part before the center begins, as distances along the ray.
+    struct EdgeCrossing { var rim: Double, rimEnd: Double, center: Double }
+
+    func edgeCrossing(_ d: LiddedBinDesign, from start: Vector2D, _ direction: Direction3D,
+                      alongX: Bool) async throws -> EdgeCrossing {
+        let origin = Vector3D(start.x, start.y, d.lidPlateZ + d.fit.thickness / 2)
+        let rim = d.lidRimAndLip().withSegmentation(count: 64)
+        let center = d.lidCenter().withSegmentation(count: 64)
+        return try await ModelFileGenerator.evaluate { evaluator in
+            func axis(_ v: Vector3D) -> Double { alongX ? v.x : v.y }
+            let rimHits = await evaluator.surfaces(of: rim, from: origin, in: direction)
+            let centerHits = await evaluator.surfaces(of: center, from: origin, in: direction)
+            let o = axis(origin)
+            let centerStart = centerHits.first { $0.transition == .entering }.map { abs(axis($0.position) - o) } ?? .nan
+            let rimStart = rimHits.first { $0.transition == .entering }.map { abs(axis($0.position) - o) } ?? .nan
+            let rimEnd = rimHits.filter { $0.transition == .exiting }
+                .map { abs(axis($0.position) - o) }.filter { $0 < centerStart + 0.01 }.max() ?? .nan
+            return EdgeCrossing(rim: rimStart, rimEnd: rimEnd, center: centerStart)
+        }
+    }
+
+    @Test(arguments: [lidCases[0], lidCases[2], lidCases[5]])
+    func `the rim and lip color wraps the plate edge on every side`(_ c: Case) async throws {
+        let d = LiddedBinDesign(c.configuration)
+        let w = try await plateEdgeAndFoot(d).foot
+        let plate = try await measure(d.lidPlateSlab(), segments: 64)
+        let far = 200.0
+        // The middle of each side (one of them the open end, with the end rim), from outside
+        let rays: [(String, Vector2D, Direction3D, Bool, Double)] = [
+            ("+y side", [0, far], .negativeY, false, far - plate.max.y),
+            ("-y side", [0, -far], .positiveY, false, far + plate.min.y),
+            ("+x side", [far, 0], .negativeX, true, far - plate.max.x),
+            ("-x side", [-far, 0], .positiveX, true, far + plate.min.x),
+        ]
+        for (name, start, direction, alongX, edge) in rays {
+            let e = try await edgeCrossing(d, from: start, direction, alongX: alongX)
+            // The rim and lip part is met first, at or outside the plate edge (the end rim
+            // reaches past it), and runs without a gap to where the center starts, w further in
+            #expect(e.rim <= edge + 0.01, "\(c.name) \(name): rim \(e.rim) edge \(edge)")
+            #expect(abs(e.center - (edge + w)) < 0.02, "\(c.name) \(name): center \(e.center) edge \(edge) w \(w)")
+            #expect(abs(e.rimEnd - e.center) < 0.01, "\(c.name) \(name): rim ends \(e.rimEnd) center \(e.center)")
+        }
+        // A corner: a ray along -y through the rounded corner of the plate (radius r about the
+        // corner center), where the band, measured along the ray, is wider than w
+        let r = (d.d.rFo1 - d.fit.plateInset) / 2 + 0.001
+        let cx = plate.max.x - r, cy = plate.max.y - r
+        let x = cx + (r - w) * 0.7
+        let outer = cy + (r * r - (x - cx) * (x - cx)).squareRoot()
+        let inner = cy + ((r - w) * (r - w) - (x - cx) * (x - cx)).squareRoot()
+        let e = try await edgeCrossing(d, from: [x, far], .negativeY, alongX: false)
+        #expect(e.rim <= far - outer + 0.02, "\(c.name) corner: rim \(e.rim) vs \(far - outer)")
+        #expect(abs(e.center - (far - inner)) < 0.02, "\(c.name) corner: center \(e.center) vs \(far - inner)")
+        #expect(abs(e.rimEnd - e.center) < 0.01, "\(c.name) corner")
+    }
+
+    @Test func `the lid center has no material in the edge band`() async throws {
+        // The band is built here from the measured width of the tongue's foot: the center has no
+        // volume in it (all round, corners and the notches included), and the rim and lip part
+        // has none in the plate inside it
+        for c in [Self.lidCases[0], Self.lidCases[5]] {
+            let d = LiddedBinDesign(c.configuration)
+            let w = try await plateEdgeAndFoot(d).foot
+            let footprint = d.lidPlateFootprint()
+            let band = footprint.subtracting { footprint.offset(amount: -(w - 0.01), style: .round) }
+                .extruded(height: d.fit.thickness).translated(z: d.lidPlateZ)
+            let inside = footprint.offset(amount: -(w + 0.01), style: .round)
+                .extruded(height: d.fit.thickness - 0.02).translated(z: d.lidPlateZ + 0.01)
+            let center = d.lidCenter(), rim = d.lidRimAndLip()
+            let (inBand, rimInside, bandVolume) = try await ModelFileGenerator.evaluate { evaluator in
+                (await evaluator.measurements(of: center.intersecting { band }.withSegmentation(count: 64)).volume,
+                 await evaluator.measurements(of: rim.intersecting { inside }.withSegmentation(count: 64)).volume,
+                 await evaluator.measurements(of: band.withSegmentation(count: 64)).volume)
+            }
+            #expect(bandVolume > 100, "\(c.name): \(bandVolume)")
+            #expect(abs(inBand) < Self.zeroVolume, "\(c.name): center in the band \(inBand)")
+            #expect(abs(rimInside) < Self.zeroVolume, "\(c.name): rim and lip inside the band \(rimInside)")
+        }
     }
 
     @Test(arguments: cases)
@@ -155,6 +283,17 @@ struct ColoredPartsTests {
                 return volumes
             }
             #expect(volumes.count == 1, "\(c.name) \(name): \(volumes)")
+        }
+    }
+
+    @Test(arguments: lidCases.dropFirst(cases.count))
+    func `the lid parts are one piece each with no empty shells`(_ c: Case) async throws {
+        let d = LiddedBinDesign(c.configuration)
+        for (name, part) in [("rim", d.lidRimAndLip()), ("center", d.lidCenter())] {
+            let count = try await ModelFileGenerator.evaluate { evaluator in
+                await evaluator.components(of: part).count
+            }
+            #expect(count == 1, "\(c.name) \(name): \(count)")
         }
     }
 
@@ -322,12 +461,13 @@ struct ColoredPartsTests {
         }
     }
 
-    /// The exported 3MF of the separated assembly: one object per part with its name, and a color
+    /// The exported 3MF of the separated and the closed assemblies: one object per part with its name, and a color
     /// group with the part's color.
-    @Test func `the 3MF names and colors every part`() async throws {
+    @Test(arguments: [LiddedBinPart.bothSeparated, .bothClosed])
+    func `the 3MF names and colors every part`(_ part: LiddedBinPart) async throws {
         let d = production()
         let file = try await ModelFileGenerator.build(named: "colors") {
-            d.coloredGeometry(for: .bothSeparated, colors: Self.distinct)
+            d.coloredGeometry(for: part, colors: Self.distinct)
         }
         let directory = FileManager.default.temporaryDirectory
             .appending(path: "lidded-bin-3mf-\(UUID().uuidString)", directoryHint: .isDirectory)

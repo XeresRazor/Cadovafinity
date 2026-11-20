@@ -8,9 +8,10 @@ public struct LiddedBinColors: Sendable, Equatable {
     public var binBody: Color
     /// The dividers between the compartments, above the pocket floor.
     public var dividers: Color
-    /// The lid's raised rim and the lip (tongue) that slides in the bin's slot.
+    /// The lid's raised rim, the lip (tongue) that slides in the bin's slot and the band around
+    /// the lid's edge, through the full plate thickness.
     public var lidRim: Color
-    /// The flat center of the lid inside the rim and the lip.
+    /// The flat center of the lid, inside the edge band.
     public var lidCenter: Color
 
     public init(binBody: Color, dividers: Color, lidRim: Color, lidCenter: Color) {

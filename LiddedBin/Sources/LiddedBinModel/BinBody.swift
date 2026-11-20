@@ -23,12 +23,48 @@ extension LiddedBinDesign {
         )
     }
 
-    /// gf_cut_pocket_interior
+    /// gf_cut_pocket_interior: from the pocket floor (`pocketFloor`) to the pocket top
+    /// (`pocketTop`, plus the 0.001 overlap of the original).
     private func pocketInterior(_ size: Vector2D) -> any Geometry3D {
         Rectangle(size)
             .aligned(at: .center)
-            .extruded(height: innerHeight - fit.thickness - fit.vFitTolerance - fit.vPosTolerance + 0.001)
-            .translated(z: -storageHeight - d.hBase + d.dWall)
+            .extruded(height: pocketTop - pocketFloor + 0.001)
+            .translated(z: -storageHeight - d.hBase + pocketFloor)
+    }
+
+    /// The height of the flat floor of the Flush raised style: the top of the base feet. The
+    /// feet (`binFeet`) are the base grid, clipped at `hBase + hBot / 2`, and the slab from `hBase`
+    /// that is `hBot / 2` tall, so they end at `hBase + hBot / 2` (6.1 mm). In the other styles
+    /// this is the height of the ridges between the recesses.
+    var flushFloorHeight: Double { d.hBase + d.hBot / 2 }
+
+    /// The least compartment depth, from the flush floor to the pocket top, for which a bin is
+    /// built in the Flush raised style.
+    static let minimumFlushDepth = 2.0
+
+    /// The top of the pockets: `bin_inner_height - lid_thickness - lid_vfit_tolerance -
+    /// lid_vpos_tolerance` above the wall line (z = dWall), which is `lidPlateZ - vFitTolerance`,
+    /// just under the lid's plate.
+    var pocketTop: Double {
+        d.dWall + innerHeight - fit.thickness - fit.vFitTolerance - fit.vPosTolerance
+    }
+
+    /// The interior style the bin is built in. Flush raised needs `minimumFlushDepth` between the
+    /// flush floor and the pocket top, which holds from a storage height of 4.3 mm (every bin of
+    /// 2 or more units and every bin given in millimeters). A shorter bin (in the customizer, the
+    /// 1 unit bin) has no room for that floor and is built as Partially raised.
+    var effectiveInteriorStyle: InteriorStyle {
+        let style = configuration.interiorStyle
+        if style == .flushRaised && pocketTop - flushFloorHeight < Self.minimumFlushDepth {
+            return .partialRaised
+        }
+        return style
+    }
+
+    /// The bottom of the pockets: the wall line (z = dWall) as in lid-bin.scad, or the flush
+    /// floor in the Flush raised style, so that the pockets do not cut into the filled floor.
+    var pocketFloor: Double {
+        effectiveInteriorStyle == .flushRaised ? flushFloorHeight : d.dWall
     }
 
     /// gf_cut_pocket: one compartment at (x, y) spanning w by h grid units.
@@ -103,13 +139,14 @@ extension LiddedBinDesign {
         }
     }
 
-    /// The dividers: the material between the compartments that stands above the pocket floor,
-    /// for the "Dividers" part. That is the bin inside the strips between the pockets (the plan
-    /// view of the rectangle the pockets tile, minus the pockets), within the interior footprint
-    /// from the pocket floor up (`dividerRegion`), minus the wall with its lip and detent bumps.
-    /// Everything else is the bin body: the wall, the floor under the pockets, the feet and the
-    /// ridges between them where they stand inside a pocket, and the ring between the pockets and
-    /// the wall. Nil for a bin without pockets, which has no dividers.
+    /// The dividers: the material between the compartments that stands above the pocket floor
+    /// (`pocketFloor`), for the "Dividers" part. That is the bin inside the strips between the
+    /// pockets (the plan view of the rectangle the pockets tile, minus the pockets), within the
+    /// interior footprint from the pocket floor up (`dividerRegion`), minus the wall with its lip
+    /// and detent bumps. Everything else is the bin body: the wall, the floor under the pockets
+    /// (in the Flush raised style the whole flat floor), the feet and the ridges between them
+    /// where they stand inside a pocket, and the ring between the pockets and the wall. Nil for a
+    /// bin without pockets, which has no dividers.
     ///
     /// The strips are cut in 2D, where the outer faces of the outer pockets and the edge of their
     /// hull cancel cleanly; a 3D hull minus the pockets leaves zero-thickness sheets there, which
@@ -148,10 +185,10 @@ extension LiddedBinDesign {
         }
     }
 
-    /// The interior footprint from the pocket floor (z = dWall) to the top of the bin, past the
-    /// top of the dividers (`floorTop`).
+    /// The interior footprint from the pocket floor (`pocketFloor`) to the top of the bin, past
+    /// the top of the dividers (`floorTop`).
     func dividerRegion() -> any Geometry3D {
-        interiorFootprint(height: innerHeight).translated(z: d.dWall)
+        interiorFootprint(height: innerHeight).translated(z: pocketFloor)
     }
 
     /// The bin without its dividers, for the "Bin body" part. Together with `binDividers` it is
@@ -191,7 +228,7 @@ extension LiddedBinDesign {
     }
 
     /// Second part of gf_bin_solid: the floor block with the interior base grid, minus the
-    /// pockets clipped to the interior.
+    /// pockets clipped to the interior. The cut starts at the pocket floor (`pocketFloor`).
     func binFloor(pockets: (any Geometry3D)?) -> any Geometry3D {
         Union {
             d.blockBottom(height: floorBlockHeight, gridX: gridX, gridY: gridY)
@@ -199,7 +236,7 @@ extension LiddedBinDesign {
         }
         .subtracting {
             let interiorCut = interiorFootprint(height: innerHeight)
-                .translated(z: d.dWall)
+                .translated(z: pocketFloor)
             if let pockets {
                 interiorCut.intersecting { pockets }
             } else {
@@ -209,18 +246,25 @@ extension LiddedBinDesign {
         }
     }
 
-    /// Third part of gf_bin_solid: the base feet. With partial_raised the interior is limited
-    /// to the raised slab; otherwise the OpenSCAD intersection holds only the interior (the
-    /// false `if` adds no operand).
+    /// Third part of gf_bin_solid: the base feet, minus the hollow of the interior base grid.
+    /// With partial_raised the hollow is limited to the raised slab (from 4.9 mm); with minimal
+    /// the OpenSCAD intersection holds only the interior (the false `if` adds no operand). Flush
+    /// raised subtracts nothing, so the feet are solid up to `flushFloorHeight`. (In that style
+    /// the interior base grid of `binFloor`, which the pockets no longer cut below the flush
+    /// floor, would fill the hollow again by itself; solid feet keep the floor from depending on
+    /// the coincident faces of the hollow and its refill.)
     func binFeet() -> any Geometry3D {
         let interior = baseGridInterior()
-        let interiorLimit: any Geometry3D = configuration.interiorStyle == .partialRaised
-            ? Rectangle([d.lGrid * gridX, d.lGrid * gridY])
+        let interiorLimit: (any Geometry3D)? = switch effectiveInteriorStyle {
+        case .minimal: interior
+        case .partialRaised:
+            Rectangle([d.lGrid * gridX, d.lGrid * gridY])
                 .aligned(at: .center)
                 .extruded(height: d.hBase - d.rC2)
                 .translated(z: d.hBot + d.hBase - d.rC2 + 0.1)
                 .intersecting { interior }
-            : interior
+        case .flushRaised: nil
+        }
         return roundedRect(height: d.hBase + d.hBot / 2 * 10, addSize: -0.5)
             .translated(z: -1)
             .intersecting {
@@ -228,7 +272,9 @@ extension LiddedBinDesign {
                     baseGrid()
                     roundedRect(height: d.hBot / 2, addSize: -0.5).translated(z: d.hBase)
                 }
-                .subtracting { interiorLimit }
+                .subtracting {
+                    if let interiorLimit { interiorLimit }
+                }
             }
     }
 }

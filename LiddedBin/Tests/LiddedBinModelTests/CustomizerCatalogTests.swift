@@ -38,6 +38,12 @@ struct CustomizerCatalogTests {
         let maximum: Double?
         let step: Double?
         let unit: String?
+        let options: [Option]?
+    }
+
+    struct Option: Decodable, Equatable {
+        let label: String
+        let value: String
     }
 
     enum JSONValue: Decodable, Equatable {
@@ -225,6 +231,25 @@ struct CustomizerCatalogTests {
         #expect(multi.bin.labels.contains("Size multiple") && multi.open.labels.contains("Size multiple"))
         #expect(!multi.lid.labels.contains("Size multiple") && !lid.labels.contains("Size multiple"))
         #expect(multi.bin.parameter("Size multiple")?.key == multi.open.parameter("Size multiple")?.key)
+    }
+
+    @Test func `interior style offers three styles with Minimal as the default`() throws {
+        try Self.requireExecutable()
+        let (bin, _, open) = try models(try Self.catalog())
+        for tab in [bin, open] {
+            let style = try #require(tab.parameter("Interior style"))
+            #expect(style.type == "choice", "\(tab.name)")
+            #expect(style.options == [Option(label: "Minimal", value: "minimal"),
+                                      Option(label: "Partially raised", value: "partial_raised"),
+                                      Option(label: "Flush raised", value: "flush_raised")], "\(tab.name)")
+            #expect(style.default == .string("minimal"), "\(tab.name)")
+        }
+        #expect(InteriorStyle.allCases.map(\.rawValue) == ["minimal", "partial_raised", "flush_raised"])
+        #expect(LiddedBinInput.defaults.interiorStyle == .minimal)
+        // The flush raised choice reaches the bin: the catalog accepts it
+        let style = try #require(bin.parameter("Interior style"))
+        let flush = try models(try Self.catalog(values: [style.key: InteriorStyle.flushRaised.parameterString]))
+        #expect(flush.bin.labels == bin.labels)
     }
 
     @Test func `parameter defaults and ranges come from the model library`() throws {

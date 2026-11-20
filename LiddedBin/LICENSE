@@ -21,6 +21,7 @@ This package is a derivative of that work and contains changes:
 - The custom pockets pattern is dropped.
 - Setting dividers to 0 gives a hollow bin.
 - It adds a web customizer.
+- It adds a Flush raised interior style with a flat floor.
 
 This file is a notice, not the license text. The full legal text is at the
 link above. This notice does not cover the separate GridfinityRebuilt package,

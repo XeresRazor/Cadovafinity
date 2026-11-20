@@ -1,9 +1,16 @@
 import GridfinityRebuilt
 
-/// Interior_Style
+/// Interior_Style, plus `flushRaised`, which lid-bin.scad does not have.
 public enum InteriorStyle: String, Sendable, CaseIterable {
+    /// The base feet are hollow and open into the compartments: each base cell shows as a
+    /// recess in the floor, about 4.1 mm deep.
     case minimal
+    /// The feet are solid up to 4.9 mm, so the recesses are 1.2 mm deep.
     case partialRaised = "partial_raised"
+    /// The recesses are filled: the floor is one flat surface at the top of the feet
+    /// (`LiddedBinDesign.flushFloorHeight`). A bin too short for it is built as `partialRaised`
+    /// (see `LiddedBinDesign.effectiveInteriorStyle`).
+    case flushRaised = "flush_raised"
 }
 
 /// Lip_Grips

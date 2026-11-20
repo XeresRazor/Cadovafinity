@@ -42,7 +42,7 @@ variables in `lid-bin.scad`.
 | `heightMode` | `gridz_define` | `.units` |
 | `snapHeight` | `enable_zsnap` | false |
 | `internalHeightOverride` | `height_internal` | 0 |
-| `interiorStyle` (`minimal`, `partialRaised`) | `Interior_Style` | `minimal` |
+| `interiorStyle` (`minimal`, `partialRaised`, `flushRaised`) | `Interior_Style` (`flushRaised` is not in lid-bin.scad; see "Interior styles") | `minimal` |
 | `lipGrips` (`none`, `x`, `y`, `xy`) | `Lip_Grips` | `xy` |
 | `lidOrientation` (`up`, `down`, `left`, `right`) | `Lid_Orientation` | `left` |
 | `compartmentPattern` (`grid`, `multiSize`) | `div_pattern` (`default`, `multisize`) | `grid` |
@@ -65,6 +65,36 @@ The lid fit constants (`lid_wall_thickness`, `lid_thickness`, `lid_hfit_toleranc
 `lid_vfit_tolerance`, `lid_vpos_tolerance`, `bin_separator_wall_thickness`,
 `interior_base_wall_adjust`) live in the internal `LidFit` type with the original defaults. They
 are not part of the public configuration; tests vary them through an internal initializer.
+
+## Interior styles
+
+The floor of each compartment sits on the Gridfinity base: one foot per grid cell, joined by a
+slab. The tops of the feet end at `hBase + hBot / 2` = 6.1 mm, and the compartments (the pockets)
+end at the pocket top, `storageHeight + 3.8` mm (19.8 mm for a 3 unit bin), 0.1 mm under the
+lid's plate. The style decides how much of the inside of the feet stays hollow:
+
+| Style | Floor of a compartment |
+|---|---|
+| Minimal (`minimal`) | The feet are hollow and open into the compartments, so each grid cell shows as a recess with sloped sides, its bottom at 2.01 mm. Between the cells the floor rises to ridges at 6.1 mm, and at the wall the slope reaches about 5.0 mm where the compartment ends. The pockets start at the wall line, 1.6 mm. |
+| Partially raised (`partialRaised`) | The feet are solid up to 4.9 mm, so the recesses are 1.2 mm deep (4.9 to 6.1 mm), with the same ridges between them. The pockets start at 1.6 mm. |
+| Flush raised (`flushRaised`) | The recesses are filled: the floor is one flat surface at the ridge height, `flushFloorHeight` = `hBase + hBot / 2` = 6.1 mm, everywhere inside the walls, and the dividers stand on it. The feet are solid up to that height and the pockets start there, so a 3 unit bin has compartments 13.7 mm deep. |
+
+Flush raised changes only what lies under the flush floor: the walls, the lip, the lid slot, the
+dividers above the floor and the outer shape of the base are those of the other styles, and the
+lid is the same. A 2x2x3 bin with 2 by 1 compartments has 26123 mm^3 of material in Minimal,
+40207 mm^3 in Partially raised and 46725 mm^3 in Flush raised.
+
+Flush raised needs at least 2 mm (`minimumFlushDepth`) between the flush floor and the pocket top,
+which holds from a storage height of 4.3 mm: the depth is 6.7 mm at 2 units and 13.7 mm at 3, and
+every height the customizer offers in millimeters is deep enough. The 1 unit bin (storage height
+2 mm, pocket top 5.8 mm, under the 6.1 mm floor) is built as Partially raised instead
+(`effectiveInteriorStyle`). A flat floor cannot be lowered for it: between two feet the underside
+of the base reaches up to 5.0 mm, so a floor that leaves 2 mm of depth (3.8 mm) would open slots
+there.
+
+In every style the pockets of a 1 unit bin end at 5.8 mm, under the top of the interior base grid
+(7.7 mm), so its compartments are closed voids under a solid top that reaches into the lid's plate
+(5.9 to 6.8 mm). lid-bin.scad builds the 1 unit bin the same way.
 
 ## Lid fit
 
@@ -159,7 +189,7 @@ the geometry and are not part of `LiddedBinConfiguration` or `LiddedBinInput`.
 | Part | Contents | `LiddedBinColors` | Default |
 |---|---|---|---|
 | Bin body | The outer wall with the stacking lip and the lid slot, the detent bumps, the floor under the pockets, the base feet with the ridges between them, and the ring between the pockets and the wall | `binBody` | slate blue-grey `#587A9E` |
-| Dividers | The walls between the compartments, from the pocket floor up | `dividers` | orange `#E8912D` |
+| Dividers | The walls between the compartments, from the pocket floor up (1.6 mm, or the 6.1 mm flush floor in the Flush raised style) | `dividers` | orange `#E8912D` |
 | Lid rim and lip | The raised rim at the lid's open end, the tongue on top of the plate edge that slides under the slot roof, and the edge band: the plate within the band width of its outline on every side (the long sides, both ends and the rounded corners), through the full plate thickness, with the detent notches | `lidRim` | slate blue-grey `#587A9E`, as the bin body |
 | Lid center | The flat plate inside the edge band, through the plate thickness | `lidCenter` | light grey `#C8CDD6` |
 
@@ -169,7 +199,8 @@ intersection and the symmetric difference). The dividers are the bin inside the 
 the pockets (in plan view, the rectangle the pockets tile minus the pockets), within the interior
 footprint from the pocket floor up, minus the wall. So the color changes at the pocket floor, a
 divider that stands on the ridge between two feet takes the ridge's top with it, and a ridge that
-crosses the middle of a compartment stays the body color. A bin with no dividers (Compartments X and Y both 1) has only the Bin body part. `.binSlice` is one Bin body part.
+crosses the middle of a compartment stays the body color. In the Flush raised style the whole flat
+floor is the body color and the dividers start on it. A bin with no dividers (Compartments X and Y both 1) has only the Bin body part. `.binSlice` is one Bin body part.
 
 The lid center is the plate's plan outline inset by the band width, extruded over the plate
 thickness, minus the detent notches; the Lid rim and lip part is the rest of the lid. So the lid
@@ -231,7 +262,7 @@ itself does not use `@Parameter`.
 | Lid clearance | 0.10...0.6 mm, step 0.05 | 0.20 | gap between the lid and the slot on each side; smaller is tighter (original value 0.45) | all |
 | Lid chamfer | 0.8...1.8 mm, step 0.1 | 1.4 | rise of the slot roof that holds the lid down; the lid's chamfer follows it, about 0.6 times as tall (original value 0.8) | all |
 | Detent interference | 0.10...0.40 mm, step 0.05 | 0.25 | overlap of the bump with the lid's edge; more is a firmer click and a stiffer lid (original value 0.15) | all |
-| Interior style | Minimal, Partially raised | Minimal | `Interior_Style` | Bin and the three assembly tabs |
+| Interior style | Minimal, Partially raised, Flush raised | Minimal | `Interior_Style` (Flush raised is not in lid-bin.scad) | Bin and the three assembly tabs |
 | Compartment layout | Equal grid, Two sizes | Equal grid | `div_pattern` | Bin and the three assembly tabs |
 | Compartments X | 1...12 compartments | 6 | `divx`: the number of compartments along X. 1 is a single open compartment, 2 adds one divider, N adds N - 1 | Bin and the three assembly tabs |
 | Compartments Y | 1...12 compartments | 6 | `divy`: the number of compartments along Y, counted as Compartments X | Bin and the three assembly tabs |
@@ -345,7 +376,7 @@ the cases investigated). Rounding fixes that, and it adds a noise floor of rough
 is `lid_2x2x3_fit_sweep`, which `generate.py` keeps in full precision (`FULL_PRECISION`)
 because float32 rounding made the import drop a wedge there.
 
-The suite currently has 110 tests (`swift build --skip-update && swift test --skip-update`), all passing. `ProductionTests`
+The suite currently has 117 tests (`swift build --skip-update && swift test --skip-update`), all passing. `ProductionTests`
 build the default configuration with `cornerSegments == nil` and Cadova's default segmentation,
 as the exporter does, and check volume, bounds, symmetric difference and the closed bin/lid
 interference against the references (with the original lid fit preset); `LidFitTests` measure
@@ -359,13 +390,24 @@ at the pocket floor and stay clear of the wall, the lid's edge band (its width a
 tongue foot for three clearances, the center's bounds, ray casts across every side and a corner,
 and the band volumes), the single-compartment bin without a Dividers part, the part names and colors of every
 colored model, their placement against the uncolored models, and the names and colors in the
-exported 3MF of the separated and the closed assemblies.
+exported 3MF of the separated and the closed assemblies; the partition, single-piece and pocket
+floor checks also run on three Flush raised bins. `FlushRaisedTests` checks the Flush raised style,
+which has no OpenSCAD reference: rays cast down over every compartment (1 mm clear of the
+dividers, the wall and the interior's rounded corners) of a 2x2x3 bin with 2 by 1 and with 6 by 6
+compartments, a 1x1x3 bin and a 3x2x3 two-size bin all meet the floor at 6.1 mm within 0.001 mm,
+while the same rays on Minimal and Partially raised bins find recesses; the flush bin contains the
+Minimal bin, is the same above the floor (the wall and lip outside the interior have the same
+volume), has the same bounds and the same lid; the pockets run from the flush floor to the pocket
+top; and the short-bin rule (the 1 unit bin is built as Partially raised, every other height has
+at least 2 mm of depth).
 `ValidationTests` also checks that `divMultiple` of 0 or less is clamped. The closed bin and
 lid assemblies have no OpenSCAD CLI reference (`lid-bin.scad` uses them for preview only), so
 the lid placement there is checked by footprint, shift and overlap tests instead.
 
 ## Known differences
 
+- The Flush raised interior style is an addition: lid-bin.scad offers only `minimal` and
+  `partial_raised`.
 - Custom compartment pockets are dropped: the `custom` value of `div_pattern` and its text
   notice are not ported, because `Text` cannot use system fonts in the planned web customizer.
 - The bin slice (`binSlice`) is a hollow ring: the port cuts the whole interior when there are no

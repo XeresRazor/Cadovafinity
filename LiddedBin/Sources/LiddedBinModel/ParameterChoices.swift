@@ -6,6 +6,7 @@ extension InteriorStyle: ParameterChoice {
         switch self {
         case .minimal: "Minimal"
         case .partialRaised: "Partially raised"
+        case .flushRaised: "Flush raised"
         }
     }
 }

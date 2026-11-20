@@ -84,6 +84,26 @@ struct ColoredPartsTests {
         ]
     }()
 
+    /// Flush raised bins, whose dividers stand on the flat floor: the defaults (6 by 6), 2 by 1
+    /// compartments and the two-size layout.
+    static let flushCases: [Case] = {
+        var flush = LiddedBinConfiguration()
+        flush.cornerSegments = 16
+        flush.interiorStyle = .flushRaised
+        var twoByOne = flush
+        twoByOne.divX = 2; twoByOne.divY = 1
+        var multi = flush
+        multi.gridX = 3; multi.compartmentPattern = .multiSize; multi.divX = 3; multi.divY = 3
+        return [
+            Case(name: "2x2x3 flush raised", configuration: flush),
+            Case(name: "2x2x3 flush raised, 2 by 1", configuration: twoByOne),
+            Case(name: "3x2x3 flush raised multisize", configuration: multi),
+        ]
+    }()
+
+    /// The bin cases of every interior style.
+    static let binCases = cases + flushCases
+
     /// The lid cases: the bin cases plus a tighter clearance and the smallest lid.
     static let lidCases: [Case] = {
         var tight = LiddedBinConfiguration()
@@ -98,7 +118,7 @@ struct ColoredPartsTests {
         ]
     }()
 
-    @Test(arguments: cases)
+    @Test(arguments: binCases)
     func `bin body and dividers split the bin exactly`(_ c: Case) async throws {
         let d = LiddedBinDesign(c.configuration)
         let pockets = d.pockets()
@@ -244,12 +264,15 @@ struct ColoredPartsTests {
         }
     }
 
-    @Test(arguments: cases)
+    @Test(arguments: binCases)
     func `dividers start at the pocket floor`(_ c: Case) async throws {
         let d = LiddedBinDesign(c.configuration)
         let dividers = try #require(d.binDividers(pockets: d.pockets()))
         let m = try await measure(dividers)
-        #expect(abs(m.min.z - d.d.dWall) < 1e-6, "\(c.name): \(m.min.z)")
+        // The wall line (z = dWall) as in lid-bin.scad, or the flush floor
+        let floor = c.configuration.interiorStyle == .flushRaised ? d.flushFloorHeight : d.d.dWall
+        #expect(d.pocketFloor == floor, "\(c.name)")
+        #expect(abs(m.min.z - floor) < 1e-6, "\(c.name): \(m.min.z)")
         // The dividers end at the top of the floor block, below the lid's plate
         #expect(abs(m.max.z - d.floorTop) < 1e-6, "\(c.name): \(m.max.z)")
     }
@@ -266,7 +289,7 @@ struct ColoredPartsTests {
         #expect(abs(wall) < Self.zeroVolume && abs(inPockets) < Self.zeroVolume && abs(outside) < Self.zeroVolume)
     }
 
-    @Test(arguments: cases)
+    @Test(arguments: binCases)
     func `every part is one piece with no empty shells`(_ c: Case) async throws {
         let d = LiddedBinDesign(c.configuration)
         let pockets = d.pockets()
@@ -302,6 +325,7 @@ struct ColoredPartsTests {
         let edits: [(String, (inout LiddedBinConfiguration) -> Void)] = [
             ("1 by 1", { $0.divX = 1; $0.divY = 1 }),
             ("multisize 1 by 1", { $0.compartmentPattern = .multiSize; $0.divX = 1; $0.divY = 1 }),
+            ("flush raised 1 by 1", { $0.interiorStyle = .flushRaised; $0.divX = 1; $0.divY = 1 }),
         ]
         for (name, edit) in edits {
             let d = production(edit)

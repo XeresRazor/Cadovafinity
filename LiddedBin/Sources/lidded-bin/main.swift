@@ -98,7 +98,7 @@ await Project(packageRelative: "Models") {
     // Bin only: declared here so that the Bin and assembly tabs share them, read only in
     // those two models
 
-    @Parameter("Interior style", description: "The shape of the bin floor (Interior_Style)")
+    @Parameter("Interior style", description: "The bin floor (Interior_Style). Minimal: the hollow base cells show as recesses. Partially raised: shallower recesses. Flush raised: a flat floor (a 1 unit bin gets Partially raised).")
     var interiorStyle = defaults.interiorStyle
 
     @Parameter("Compartment layout", description: "An equal grid, or compartments of two sizes (div_pattern)")

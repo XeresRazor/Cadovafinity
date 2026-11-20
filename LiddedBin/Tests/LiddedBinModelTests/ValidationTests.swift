@@ -1,4 +1,6 @@
 import Testing
+import Cadova
+import GridfinityTestSupport
 @testable import LiddedBinModel
 import GridfinityRebuilt
 
@@ -96,6 +98,56 @@ struct ValidationTests {
         c.heightMode = .externalMillimeters
         c.gridZ = 0
         #expect(c.validated().gridZ == LiddedBinLimits.externalHeight.lowerBound)
+    }
+
+    @Test func `the height ranges allow the same shortest and tallest bin`() {
+        #expect(LiddedBinLimits.unitsHeight == 2...12)
+        #expect(abs(LiddedBinLimits.internalHeight.lowerBound - 6.8) < 1e-9)
+        #expect(abs(LiddedBinLimits.internalHeight.upperBound - 76.8) < 1e-9)
+        #expect(LiddedBinLimits.externalHeight == 14...84)
+    }
+
+    @Test func `heights below the shortest bin are clamped and in-range heights are unchanged`() {
+        var c = LiddedBinConfiguration()
+        c.heightMode = .units
+        c.gridZ = 1
+        #expect(c.validated().gridZ == 2)
+        c.gridZ = 2; #expect(c.validated().gridZ == 2)
+        c.gridZ = 2.5; #expect(c.validated().gridZ == 2.5)
+        c.heightMode = .internalMillimeters
+        c.gridZ = 5
+        #expect(abs(c.validated().gridZ - 6.8) < 1e-9)
+        c.gridZ = 6.5
+        #expect(abs(c.validated().gridZ - 6.8) < 1e-9)
+        c.gridZ = 20; #expect(c.validated().gridZ == 20)
+        c.heightMode = .externalMillimeters
+        c.gridZ = 13.9
+        #expect(c.validated().gridZ == 14)
+        c.gridZ = 14; #expect(c.validated().gridZ == 14)
+        c.gridZ = 30; #expect(c.validated().gridZ == 30)
+    }
+
+    /// The customizer's shortest bin in each height style (2 units, internal 6.8 mm, overall 14 mm)
+    /// is the same 9 mm storage height, and its compartments are not sealed under the lid: the closed
+    /// lid and bin overlap by about 1.4 mm^3 (the 1 unit bin gave 5728 mm^3).
+    @Test(arguments: [InteriorStyle.minimal, .partialRaised, .flushRaised])
+    func `the shortest bin of every height style builds the same storage height with a small overlap`(
+        _ style: InteriorStyle
+    ) async throws {
+        for heightStyle in [HeightStyle.sevenMillimeterUnits, .internalHeight, .externalHeight] {
+            var i = LiddedBinInput()
+            i.heightStyle = heightStyle
+            i.unitsHeight = -10; i.internalHeight = -10; i.externalHeight = -10
+            i.interiorStyle = style
+            i.divX = 2; i.divY = 2
+            var c = i.configuration
+            c.cornerSegments = 16
+            #expect(c.gridZ == LiddedBinLimits.heightRange(for: c.heightMode).lowerBound)
+            let d = LiddedBinDesign(c)
+            #expect(abs(d.storageHeight - 9) < 1e-9, "\(heightStyle) \(style)")
+            let overlap = try await measure(d.binSolid(pockets: d.pockets()).intersecting { d.lidBody() })
+            #expect(overlap.volume < 8, "\(heightStyle) \(style): \(overlap.volume)")
+        }
     }
 
     @Test func `internal height override cannot exceed the storage height`() {

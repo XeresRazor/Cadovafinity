@@ -163,6 +163,7 @@ struct FlushRaisedTests {
 
     /// Flush raised needs 2 mm from the flush floor to the pocket top. The 1 unit bin (pocket top
     /// 5.8 mm, under the 6.1 mm floor) is built as Partially raised; from 2 units on the floor is flush.
+    /// The customizer's shortest bin is 2 units, so this fallback is only reachable through the model API.
     @Test func `a bin too short for the flush floor is built partially raised`() async throws {
         let depths: [(Double, Double)] = [(1, -0.3), (2, 6.7), (3, 13.7)]
         for (units, depth) in depths {
@@ -173,17 +174,16 @@ struct FlushRaisedTests {
         // The threshold is a storage height of 4.3 mm
         #expect(Self.design(.flushRaised) { $0.gridZ = (4.31 + 5) / 7 }.effectiveInteriorStyle == .flushRaised)
         #expect(Self.design(.flushRaised) { $0.gridZ = (4.29 + 5) / 7 }.effectiveInteriorStyle == .partialRaised)
-        // Every bin the customizer offers is either flush with at least 2 mm of depth or partially raised
-        var heights: [(HeightMode, Double)] = (1...12).map { (.units, Double($0)) }
+        // The fallback is a safeguard for the model API: every bin the customizer offers is flush with
+        // at least 2 mm of depth
+        var heights: [(HeightMode, Double)] = Array(Int(LiddedBinLimits.unitsHeight.lowerBound)...Int(LiddedBinLimits.unitsHeight.upperBound))
+            .map { (.units, Double($0)) }
         heights += [(.internalMillimeters, LiddedBinLimits.internalHeight.lowerBound),
                     (.externalMillimeters, LiddedBinLimits.externalHeight.lowerBound)]
         for (mode, z) in heights {
             let d = Self.design(.flushRaised) { $0.heightMode = mode; $0.gridZ = z }
-            if d.effectiveInteriorStyle == .flushRaised {
-                #expect(d.pocketTop - d.pocketFloor >= LiddedBinDesign.minimumFlushDepth, "\(mode) \(z)")
-            } else {
-                #expect(mode == .units && z == 1, "\(mode) \(z)")
-            }
+            #expect(d.effectiveInteriorStyle == .flushRaised, "\(mode) \(z)")
+            #expect(d.pocketTop - d.pocketFloor >= LiddedBinDesign.minimumFlushDepth, "\(mode) \(z)")
         }
 
         // The smallest bin builds, as the partially raised bin

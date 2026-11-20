@@ -85,16 +85,18 @@ lid is the same. A 2x2x3 bin with 2 by 1 compartments has 26123 mm^3 of material
 40207 mm^3 in Partially raised and 46725 mm^3 in Flush raised.
 
 Flush raised needs at least 2 mm (`minimumFlushDepth`) between the flush floor and the pocket top,
-which holds from a storage height of 4.3 mm: the depth is 6.7 mm at 2 units and 13.7 mm at 3, and
-every height the customizer offers in millimeters is deep enough. The 1 unit bin (storage height
-2 mm, pocket top 5.8 mm, under the 6.1 mm floor) is built as Partially raised instead
-(`effectiveInteriorStyle`). A flat floor cannot be lowered for it: between two feet the underside
-of the base reaches up to 5.0 mm, so a floor that leaves 2 mm of depth (3.8 mm) would open slots
-there.
+which holds from a storage height of 4.3 mm: the depth is 6.7 mm at 2 units and 13.7 mm at 3. Every
+height the customizer offers is deep enough (its shortest bin is 2 units), so the customizer cannot
+reach the fallback. It is a safeguard for direct use of the model API: a bin below that storage
+height, such as the 1 unit bin (storage height 2 mm, pocket top 5.8 mm, under the 6.1 mm floor), is
+built as Partially raised instead (`effectiveInteriorStyle`). A flat floor cannot be lowered for it:
+between two feet the underside of the base reaches up to 5.0 mm, so a floor that leaves 2 mm of
+depth (3.8 mm) would open slots there.
 
 In every style the pockets of a 1 unit bin end at 5.8 mm, under the top of the interior base grid
 (7.7 mm), so its compartments are closed voids under a solid top that reaches into the lid's plate
-(5.9 to 6.8 mm). lid-bin.scad builds the 1 unit bin the same way.
+(5.9 to 6.8 mm); the closed lid and bin overlap by 5728 mm^3 for a 2x2x1 bin, against about 1.4 mm^3
+at 2 and 3 units. lid-bin.scad builds the 1 unit bin the same way, so the customizer starts at 2 units.
 
 ## Lid fit
 
@@ -252,8 +254,8 @@ itself does not use `@Parameter`.
 | Grid width | 1...6 cells | 2 | `gridx` | all |
 | Grid depth | 1...6 cells | 2 | `gridy` | all |
 | Height style | 7 mm units, Internal height, Overall height | 7 mm units | `gridz_define` | all |
-| Height | 1...12 units, step 1 | 3 | `gridz` | all, when Height style is 7 mm units |
-| Internal height | 5...76.8 mm, step 1 | 20 | `gridz` | all, when Height style is Internal height |
+| Height | 2...12 units, step 1 | 3 | `gridz` | all, when Height style is 7 mm units |
+| Internal height | 6.8...76.8 mm, step 1 | 20 | `gridz` | all, when Height style is Internal height |
 | Overall height | 14...84 mm, step 1 | 30 | `gridz` | all, when Height style is Overall height |
 | Snap to 7 mm | on, off | off | `enable_zsnap` | all, when Height style is Internal height or Overall height |
 | Internal block height | 0...80 mm | 0 | `height_internal` | all |
@@ -376,7 +378,7 @@ the cases investigated). Rounding fixes that, and it adds a noise floor of rough
 is `lid_2x2x3_fit_sweep`, which `generate.py` keeps in full precision (`FULL_PRECISION`)
 because float32 rounding made the import drop a wedge there.
 
-The suite currently has 117 tests (`swift build --skip-update && swift test --skip-update`), all passing. `ProductionTests`
+The suite currently has 120 tests (`swift build --skip-update && swift test --skip-update`), all passing. `ProductionTests`
 build the default configuration with `cornerSegments == nil` and Cadova's default segmentation,
 as the exporter does, and check volume, bounds, symmetric difference and the closed bin/lid
 interference against the references (with the original lid fit preset); `LidFitTests` measure
@@ -398,9 +400,12 @@ compartments, a 1x1x3 bin and a 3x2x3 two-size bin all meet the floor at 6.1 mm 
 while the same rays on Minimal and Partially raised bins find recesses; the flush bin contains the
 Minimal bin, is the same above the floor (the wall and lip outside the interior have the same
 volume), has the same bounds and the same lid; the pockets run from the flush floor to the pocket
-top; and the short-bin rule (the 1 unit bin is built as Partially raised, every other height has
-at least 2 mm of depth).
-`ValidationTests` also checks that `divMultiple` of 0 or less is clamped. The closed bin and
+top; and the short-bin rule (the 1 unit bin, reachable only through the model API, is built as Partially
+raised; every height the customizer offers has at least 2 mm of depth).
+`ValidationTests` also checks that `divMultiple` of 0 or less is clamped, that heights below the
+shortest bin (2 units, internal 6.8 mm, overall 14 mm) are clamped, and that the shortest bin of each
+height style has the same 9 mm storage height and a closed lid and bin overlap under 8 mm^3 in all
+three interior styles (1.34 mm^3). The closed bin and
 lid assemblies have no OpenSCAD CLI reference (`lid-bin.scad` uses them for preview only), so
 the lid placement there is checked by footprint, shift and overlap tests instead.
 
@@ -413,6 +418,8 @@ the lid placement there is checked by footprint, shift and overlap tests instead
 - The bin slice (`binSlice`) is a hollow ring: the port cuts the whole interior when there are no
   pockets. The original OpenSCAD model produces a solid block there because the interior cut
   intersects with an empty `children()` and cuts nothing.
+- The customizer offers heights from 2 units. A 1 unit bin does not work in the original model
+  either: its compartments end below the top of the interior base grid and are sealed under a solid top.
 - The customizer offers 1 to 12 compartments per axis; the original model's `divx` and `divy` of 0
   (a solid block) is not offered. Direct use of the model API with a count of 0 gives the hollow cut
   that `binSlice` uses. The references for it (`bin_1x1x2_nogrips_div0`, `bin_slice_2x2x3`,

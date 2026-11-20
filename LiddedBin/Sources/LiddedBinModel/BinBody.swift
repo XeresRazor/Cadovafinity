@@ -39,7 +39,8 @@ extension LiddedBinDesign {
     var flushFloorHeight: Double { d.hBase + d.hBot / 2 }
 
     /// The least compartment depth, from the flush floor to the pocket top, for which a bin is
-    /// built in the Flush raised style.
+    /// built in the Flush raised style. The customizer cannot reach the fallback below it (its
+    /// shortest bin is 2 units); it is a safeguard for direct use of the model API.
     static let minimumFlushDepth = 2.0
 
     /// The top of the pockets: `bin_inner_height - lid_thickness - lid_vfit_tolerance -
@@ -51,8 +52,8 @@ extension LiddedBinDesign {
 
     /// The interior style the bin is built in. Flush raised needs `minimumFlushDepth` between the
     /// flush floor and the pocket top, which holds from a storage height of 4.3 mm (every bin of
-    /// 2 or more units and every bin given in millimeters). A shorter bin (in the customizer, the
-    /// 1 unit bin) has no room for that floor and is built as Partially raised.
+    /// 2 or more units and every bin the customizer offers). A shorter bin (only possible through
+    /// the model API, for example 1 unit) has no room for that floor and is built as Partially raised.
     var effectiveInteriorStyle: InteriorStyle {
         let style = configuration.interiorStyle
         if style == .flushRaised && pocketTop - flushFloorHeight < Self.minimumFlushDepth {

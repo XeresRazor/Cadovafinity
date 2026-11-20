@@ -10,7 +10,7 @@ The design is a port of smkent's OpenSCAD model "Gridfinity Bins with Lids" to S
 
 ## What you can adjust
 
-- Grid width and depth (1 to 6 cells), and the height as 7 mm units, internal height or overall height.
+- Grid width and depth (1 to 6 cells), and the height as 7 mm units (from 2 units), internal height or overall height.
 - Compartment layout: an equal grid, or compartments of two sizes. Compartments X and Y set the number of compartments along each axis: 1 is a single open compartment, and 2 is the smallest count that adds a divider (N compartments have N minus 1 dividers).
 - Lip grips (none, along X, along Y, both), lid direction (four ways) and the interior style: Minimal, Partially raised, or Flush raised for a flat floor.
 - Five downloads: **Bin**, **Lid**, **Bin and lid (closed)**, **Bin and lid (separated)** (side by side on the build plate, ready to import into a slicer) and **Bin and lid (open)**.
@@ -24,6 +24,7 @@ The fit defaults are starting values chosen from measurements of the model, then
 
 ## Differences from the original
 
+- The customizer offers heights from 2 units. A 1 unit bin does not work in the original model either: its compartments end below the top of the interior base grid and are sealed under a solid top.
 - The customizer offers 1 to 12 compartments per axis. The original model's `divx` and `divy` of 0 (a solid block) is not offered.
 - The bin slice (`binSlice`) is a hollow ring. The original OpenSCAD model produces a solid block there because of an empty-children quirk.
 - The lid fit is tighter, the slot roof and lid chamfer are larger, and the detent is a seated catch. The `openSCADOriginal` preset in the code reproduces the original geometry exactly, and the reference tests use it.
@@ -34,7 +35,7 @@ The fit defaults are starting values chosen from measurements of the model, then
 
 | Folder | Contents |
 |---|---|
-| [`LiddedBin/`](LiddedBin/README.md) | The lidded bin: model library, the `lidded-bin` executable that defines the customizer, and the OpenSCAD reference generator. 117 tests. |
+| [`LiddedBin/`](LiddedBin/README.md) | The lidded bin: model library, the `lidded-bin` executable that defines the customizer, and the OpenSCAD reference generator. 120 tests. |
 | [`GridfinityRebuilt/`](GridfinityRebuilt/README.md) | A Swift/Cadova port of the core of [gridfinity-rebuilt-openscad](https://github.com/kennetek/gridfinity-rebuilt-openscad), plus `GridfinityTestSupport`, the helpers that compare geometry with OpenSCAD output. 33 tests. |
 | `docs/superpowers/` | Design notes, specs and implementation plans. |
 | `.github/workflows/customizer.yml` | Builds the customizer and publishes it to GitHub Pages on every push to `main`. |

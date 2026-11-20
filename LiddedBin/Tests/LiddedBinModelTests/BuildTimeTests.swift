@@ -16,7 +16,7 @@ struct BuildTimeTests {
     }
 
     static let cases: [Case] = [
-        Case(gx: 1, gy: 1, gz: 1, dx: 1, dy: 1, part: .bin),
+        Case(gx: 1, gy: 1, gz: 2, dx: 1, dy: 1, part: .bin),
         Case(gx: 2, gy: 2, gz: 3, dx: 6, dy: 6, part: .bin),
         Case(gx: 3, gy: 3, gz: 3, dx: 6, dy: 6, part: .bin),
         Case(gx: 4, gy: 4, gz: 4, dx: 6, dy: 6, part: .bin),

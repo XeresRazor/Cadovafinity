@@ -39,6 +39,8 @@ public enum LiddedBinPart: String, Sendable, CaseIterable {
     case lid
     case bothClosed = "both_closed"
     case bothOpen = "both_open"
+    case lidOnPlate = "lid_on_plate"
+    case bothSeparated = "both_separated"
     case binSlice = "bin_slice"
 }
 

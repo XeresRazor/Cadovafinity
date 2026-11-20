@@ -2,15 +2,15 @@ import Cadova
 import LiddedBinModel
 
 // The web customizer's project. Built natively (`swift run lidded-bin`), every parameter has its
-// default value, so this writes the three models for the default bin.
+// default value, so this writes the five models for the default bin.
 //
 // Where a parameter is read decides which tabs list it. Cadova lists a parameter on every tab when
 // the project's own content reads it, and on a model's tab when that model reads it. So:
 // - the settings both the bin and the lid depend on (size, height, lid direction, lip grips, and
 //   the three lid fit controls) are read in the project body and appear on every tab;
 // - the bin-only settings (interior style, compartments, dividers, size multiple) are declared in
-//   the project body, so the Bin and open assembly tabs share their values, but are read only
-//   inside those two models, so the Lid tab does not list them.
+//   the project body, so the Bin and assembly tabs share their values, but are read only
+//   inside those models, so the Lid tab does not list them.
 // A declaration alone does not list a parameter; only reading it does. The conditional
 // parameters rely on that: they are read only when they matter.
 //
@@ -75,7 +75,7 @@ await Project(packageRelative: "Models") {
                description: "How far the bump on the bin overlaps the lid's edge as the lid slides past it. More is a firmer click and a stiffer lid; the original model used 0.15.")
     var detentInterference = defaults.detentInterference
 
-    // Bin only: declared here so that the Bin and open assembly tabs share them, read only in
+    // Bin only: declared here so that the Bin and assembly tabs share them, read only in
     // those two models
 
     @Parameter("Interior style", description: "The shape of the bin floor (Interior_Style)")
@@ -154,7 +154,13 @@ await Project(packageRelative: "Models") {
         LiddedBinDesign(binInput().configuration).geometry(for: .bin)
     }
     await Model("Lid") {
-        LiddedBinDesign(lidInput.configuration).geometry(for: .lid)
+        LiddedBinDesign(lidInput.configuration).geometry(for: .lidOnPlate)
+    }
+    await Model("Bin and lid (closed)") {
+        LiddedBinDesign(binInput().configuration).geometry(for: .bothClosed)
+    }
+    await Model("Bin and lid (separated)") {
+        LiddedBinDesign(binInput().configuration).geometry(for: .bothSeparated)
     }
     await Model("Bin and lid (open)") {
         LiddedBinDesign(binInput().configuration).geometry(for: .bothOpen)

@@ -102,10 +102,11 @@ struct CustomizerCatalogTests {
         return (try #require(byName["Bin"]), try #require(byName["Lid"]), try #require(byName["Bin and lid (open)"]))
     }
 
-    @Test func `three tabs with the attribution`() throws {
+    @Test func `five tabs with the attribution`() throws {
         try Self.requireExecutable()
         let catalog = try Self.catalog()
-        #expect(catalog.models.map(\.name) == ["Bin", "Lid", "Bin and lid (open)"])
+        #expect(catalog.models.map(\.name) == ["Bin", "Lid", "Bin and lid (closed)",
+                                                "Bin and lid (separated)", "Bin and lid (open)"])
         #expect(catalog.author == "smkent (original design), ported by David Green")
         #expect(catalog.license == "CC BY 4.0")
         #expect(catalog.title == "Gridfinity Lidded Bin")
@@ -136,6 +137,17 @@ struct CustomizerCatalogTests {
         // Bin and open assembly share one declaration of each bin-only parameter
         for label in Self.binOnly {
             #expect(bin.parameter(label)?.key == open.parameter(label)?.key)
+        }
+    }
+
+    @Test func `closed and separated tabs list the same controls as the open assembly`() throws {
+        try Self.requireExecutable()
+        let catalog = try Self.catalog()
+        let (_, _, open) = try models(catalog)
+        for name in ["Bin and lid (closed)", "Bin and lid (separated)"] {
+            let tab = try #require(catalog.models.first { $0.name == name })
+            #expect(tab.labels == open.labels, "\(name)")
+            #expect(tab.parameters.map(\.key) == open.parameters.map(\.key), "\(name)")
         }
     }
 

@@ -85,7 +85,7 @@ original inset `0.5 + 3 * lid_hfit_tolerance` fixes a gap of 0.45 mm per side.
   original 0.229 mm perpendicular gap between the tongue's chamfer and the slot roof, and smaller
   ones tighten it (0.129 mm at 0.10). The bin depends on it through the detent bumps, whose
   protrusion is `lidClearance + detentInterference`.
-- Customizer: "Lid clearance" (0.10...0.6 mm, step 0.05) on all three tabs.
+- Customizer: "Lid clearance" (0.10...0.6 mm, step 0.05) on all five tabs.
 - The lid tongue peak depends on the clearance: a tighter clearance gives a taller tongue. With
   a lid chamfer of 1.4 the peak is 1.11 mm above the plate top at a clearance of 0.10 and 0.89 mm
   at 0.20.
@@ -104,7 +104,7 @@ edge has a chamfer parallel to the roof, so it follows the same slope.
   interpolated, which keeps the rise within 0.003 mm of the setting. The tongue's chamfer keeps a perpendicular gap of
   0.229 mm (at the default clearance) to the roof for every rise, and the tongue's peak above
   the plate grows from 0.64 mm (0.8) to 0.89 mm (1.4).
-- Customizer: "Lid chamfer" (0.8...1.8 mm, step 0.1) on all three tabs, since both the bin and
+- Customizer: "Lid chamfer" (0.8...1.8 mm, step 0.1) on all five tabs, since both the bin and
   the lid carry the slope.
 
 `detentInterference` (mm) is how far the detent bumps on the bin overlap the lid's plate edge as
@@ -131,7 +131,7 @@ notch in each side of the lid.
 - The bumps sit where the lid plate's edge starts to curve into its corner, so while the lid
   slides the deepest overlap is 0.24 mm rather than the full 0.25 (measured on the straight
   edge), and the overlap ends about 1.85 mm after the lid starts to open.
-- Customizer: "Detent interference" (0.10...0.40 mm, step 0.05) on all three tabs, since the bin
+- Customizer: "Detent interference" (0.10...0.40 mm, step 0.05) on all five tabs, since the bin
   carries the bumps and the lid the notches.
 
 ## Parts
@@ -143,8 +143,10 @@ notch in each side of the lid.
 |---|---|
 | `bin` | The bin. |
 | `lid` | The lid, positioned as in OpenSCAD: its bottom is at z = -0.2 (lid_thickness less the vertical position tolerance). |
-| `bothClosed` | Bin and lid as two Cadova parts named "Bin" and "Lid", lid closed. |
-| `bothOpen` | The same, with the lid slid open. |
+| `lidOnPlate` | The lid in print orientation (top up) with its lowest point at z = 0. `lid` is lifted by the vertical position tolerance (0.2 mm) to get this. The customizer's Lid tab uses it. |
+| `bothClosed` | Bin and lid as two Cadova parts named "Bin" and "Lid", lid closed (seated in the slot). |
+| `bothSeparated` | The same two parts side by side, each in print orientation and resting on the build plate at z = 0, with a 10 mm gap between their bounding boxes. The pair is centered on the origin along the layout direction (X when the grid is at most as wide as it is deep, Y otherwise) and each piece is centered on the other axis. The bin comes first (lower coordinate), then the lid. |
+| `bothOpen` | The two parts as for `bothClosed`, with the lid slid open. |
 | `binSlice` | A thin slice of the bin at the lip for print testing, a hollow ring. |
 
 ## Build
@@ -153,11 +155,17 @@ notch in each side of the lid.
 swift run lidded-bin
 ```
 
-This writes three 3MF files to `Models/`, all built with the default parameter values:
-`Bin`, `Lid` and `Bin and lid (open)` (the open assembly, with the bin and the lid as two
-separate parts). `Models/` is generated output and is git-ignored. The closed assembly and the
-bin slice are not exported; they remain available as `LiddedBinPart.bothClosed` and
-`LiddedBinPart.binSlice` in the library.
+This writes five 3MF files to `Models/`, all built with the default parameter values:
+`Bin`, `Lid` (in print orientation, on the plate), `Bin and lid (closed)` (the lid seated in the
+slot), `Bin and lid (separated)` (both pieces beside each other, each in print orientation on the
+plate at z = 0, so a slicer can import the file with the pieces already laid out) and
+`Bin and lid (open)` (the lid slid out). The assemblies hold the bin and the lid as two
+separate parts. `Models/` is generated output and is git-ignored. The bin slice is not
+exported; it remains available as `LiddedBinPart.binSlice` in the library.
+
+Slicers keep the relative positions of the objects in a 3MF but may re-center the group on the
+bed. Printing the separated model needs a bed at least as large as both pieces plus the 10 mm
+gap: for the default 2x2x3 bin that is about 175 x 84 mm.
 
 ## Customizer parameters
 
@@ -181,18 +189,18 @@ itself does not use `@Parameter`.
 | Lid clearance | 0.10...0.6 mm, step 0.05 | 0.20 | gap between the lid and the slot on each side; smaller is tighter (original value 0.45) | all |
 | Lid chamfer | 0.8...1.8 mm, step 0.1 | 1.4 | rise of the slot roof that holds the lid down; the lid's chamfer follows it, about 0.6 times as tall (original value 0.8) | all |
 | Detent interference | 0.10...0.40 mm, step 0.05 | 0.25 | overlap of the bump with the lid's edge; more is a firmer click and a stiffer lid (original value 0.15) | all |
-| Interior style | Minimal, Partially raised | Minimal | `Interior_Style` | Bin, Bin and lid (open) |
-| Compartments | Equal grid, Two sizes | Equal grid | `div_pattern` | Bin, Bin and lid (open) |
-| Dividers X | 0...12 | 6 | `divx` | Bin, Bin and lid (open) |
-| Dividers Y | 0...12 | 6 | `divy` | Bin, Bin and lid (open) |
-| Size multiple | 1...5, step 0.5 | 2 | `div_multiple` | Bin, Bin and lid (open), when Compartments is Two sizes |
+| Interior style | Minimal, Partially raised | Minimal | `Interior_Style` | Bin and the three assembly tabs |
+| Compartments | Equal grid, Two sizes | Equal grid | `div_pattern` | Bin and the three assembly tabs |
+| Dividers X | 0...12 | 6 | `divx` | Bin and the three assembly tabs |
+| Dividers Y | 0...12 | 6 | `divy` | Bin and the three assembly tabs |
+| Size multiple | 1...5, step 0.5 | 2 | `div_multiple` | Bin and the three assembly tabs, when Compartments is Two sizes |
 
 All parameters are declared in the project, so a value is shared between the tabs that show it.
 Cadova lists a parameter on a tab only when that model reads it, and on every tab when the
 project body reads it. The settings the lid depends on, including the three lid fit controls
 (which shape both parts), are read in the project body, so every tab lists the lid fit controls
-right after Lip grips; the bin-only settings are read only inside the `Bin` and
-`Bin and lid (open)` models, since the lid geometry does not depend on them. The conditional
+right after Lip grips; the bin-only settings are read only inside the `Bin` and the
+three assembly models, since the lid geometry does not depend on them. The conditional
 parameters are read only while they apply.
 Internal block height is clamped to the bin's storage height by `validated()`.
 
@@ -214,8 +222,9 @@ after changing `main.swift`; `swift test` does not rebuild the executable.
 ## Publishing the customizer
 
 `swift package generate-customizer` builds a static web page from `lidded-bin`, with the model
-compiled to WebAssembly so it runs in the visitor's browser. The page offers three tabs, one for
-each exported model (`Bin`, `Lid` and `Bin and lid (open)`), each with the parameters listed
+compiled to WebAssembly so it runs in the visitor's browser. The page offers five tabs, one for
+each exported model (`Bin`, `Lid`, `Bin and lid (closed)`, `Bin and lid (separated)` and
+`Bin and lid (open)`), each with the parameters listed
 above and a download button.
 
 Build it locally (needs the Swift 6.4.0 toolchain from swift.org, and network access to fetch
@@ -286,7 +295,7 @@ the cases investigated). Rounding fixes that, and it adds a noise floor of rough
 is `lid_2x2x3_fit_sweep`, which `generate.py` keeps in full precision (`FULL_PRECISION`)
 because float32 rounding made the import drop a wedge there.
 
-The suite currently has 86 tests (`swift build --skip-update && swift test --skip-update`), all passing. `ProductionTests`
+The suite currently has 91 tests (`swift build --skip-update && swift test --skip-update`), all passing. `ProductionTests`
 build the default configuration with `cornerSegments == nil` and Cadova's default segmentation,
 as the exporter does, and check volume, bounds, symmetric difference and the closed bin/lid
 interference against the references (with the original lid fit preset); `LidFitTests` measure

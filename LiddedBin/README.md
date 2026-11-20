@@ -149,6 +149,37 @@ notch in each side of the lid.
 | `bothOpen` | The two parts as for `bothClosed`, with the lid slid open. |
 | `binSlice` | A thin slice of the bin at the lip for print testing, a hollow ring. |
 
+## Colors
+
+`coloredGeometry(for:colors:)` returns the same models as `geometry(for:)`, placed the same way,
+with each piece split into named Cadova parts that carry a color from `LiddedBinColors`. A slicer
+can then give each part its own filament. The colors are presentation only: they do not change
+the geometry and are not part of `LiddedBinConfiguration` or `LiddedBinInput`.
+
+| Part | Contents | `LiddedBinColors` | Default |
+|---|---|---|---|
+| Bin body | The outer wall with the stacking lip and the lid slot, the detent bumps, the floor under the pockets, the base feet with the ridges between them, and the ring between the pockets and the wall | `binBody` | slate blue-grey `#587A9E` |
+| Dividers | The walls between the compartments, from the pocket floor up | `dividers` | orange `#E8912D` |
+| Lid rim and lip | The raised rim at the lid's open end and the tongue on top of the plate edge that slides under the slot roof, with the detent notches | `lidRim` | slate blue-grey `#587A9E`, as the bin body |
+| Lid center | The flat plate inside them, with the detent notches | `lidCenter` | light grey `#C8CDD6` |
+
+The bin's parts are the bin, and the lid's parts are the lid: each pair is an exact partition of
+the uncolored piece, with no overlap and no gap (`ColoredPartsTests` checks the volumes, the
+intersection and the symmetric difference). The dividers are the bin inside the strips between
+the pockets (in plan view, the rectangle the pockets tile minus the pockets), within the interior
+footprint from the pocket floor up, minus the wall. So the color changes at the pocket floor, a
+divider that stands on the ridge between two feet takes the ridge's top with it, and a ridge that
+crosses the middle of a compartment stays the body color. A bin with no dividers (Dividers X or Y
+of 0) has only the Bin body part. `.binSlice` is one Bin body part.
+
+Each part is a separate object in the exported 3MF, named as above, with its color as a 3MF
+material color group (`m:colorgroup`). The parts keep their positions, so they sit together as
+the assembled piece. No extruder or filament numbers are set: the colors are display and material
+colors, and how a slicer maps them to filaments (or whether it shows them at all) is for you to
+confirm in your slicer. Printing on a single-color printer works the same way, except that each
+piece is two objects (four for the assemblies); keep them where the file places them so they
+print as one piece. Whether a slicer offers to merge them into one object is not verified here.
+
 ## Build
 
 ```
@@ -159,8 +190,9 @@ This writes five 3MF files to `Models/`, all built with the default parameter va
 `Bin`, `Lid` (in print orientation, on the plate), `Bin and lid (closed)` (the lid seated in the
 slot), `Bin and lid (separated)` (both pieces beside each other, each in print orientation on the
 plate at z = 0, so a slicer can import the file with the pieces already laid out) and
-`Bin and lid (open)` (the lid slid out). The assemblies hold the bin and the lid as two
-separate parts. `Models/` is generated output and is git-ignored. The bin slice is not
+`Bin and lid (open)` (the lid slid out). Each model is made of the colored parts of
+"Colors": the Bin of "Bin body" and "Dividers", the Lid of "Lid rim and lip" and "Lid center",
+and the assemblies of all four. `Models/` is generated output and is git-ignored. The bin slice is not
 exported; it remains available as `LiddedBinPart.binSlice` in the library.
 
 Slicers keep the relative positions of the objects in a 3MF but may re-center the group on the
@@ -194,13 +226,20 @@ itself does not use `@Parameter`.
 | Dividers X | 0...12 | 6 | `divx` | Bin and the three assembly tabs |
 | Dividers Y | 0...12 | 6 | `divy` | Bin and the three assembly tabs |
 | Size multiple | 1...5, step 0.5 | 2 | `div_multiple` | Bin and the three assembly tabs, when Compartments is Two sizes |
+| Bin color | color picker | `#587A9E` | none (colors the Bin body part) | Bin and the three assembly tabs |
+| Divider color | color picker | `#E8912D` | none (colors the Dividers part) | Bin and the three assembly tabs |
+| Lid rim color | color picker | `#587A9E` | none (colors the Lid rim and lip part) | Lid and the three assembly tabs |
+| Lid center color | color picker | `#C8CDD6` | none (colors the Lid center part) | Lid and the three assembly tabs |
 
 All parameters are declared in the project, so a value is shared between the tabs that show it.
 Cadova lists a parameter on a tab only when that model reads it, and on every tab when the
 project body reads it. The settings the lid depends on, including the three lid fit controls
 (which shape both parts), are read in the project body, so every tab lists the lid fit controls
 right after Lip grips; the bin-only settings are read only inside the `Bin` and the
-three assembly models, since the lid geometry does not depend on them. The conditional
+three assembly models, since the lid geometry does not depend on them. The four colors are
+declared after Detent interference and read only by the models that have those parts, so each
+tab lists them last: the Bin tab the bin and divider colors, the Lid tab the two lid colors, and
+the assembly tabs all four. Their defaults come from `LiddedBinColors.defaults`. The conditional
 parameters are read only while they apply.
 Internal block height is clamped to the bin's storage height by `validated()`.
 
@@ -225,7 +264,8 @@ after changing `main.swift`; `swift test` does not rebuild the executable.
 compiled to WebAssembly so it runs in the visitor's browser. The page offers five tabs, one for
 each exported model (`Bin`, `Lid`, `Bin and lid (closed)`, `Bin and lid (separated)` and
 `Bin and lid (open)`), each with the parameters listed
-above and a download button.
+above and a download button. The four color controls are color pickers (Cadova's `Color`
+parameter type); how the page previews the part colors has not been checked in a browser.
 
 Build it locally (needs the Swift 6.4.0 toolchain from swift.org, and network access to fetch
 dependencies):
@@ -295,14 +335,19 @@ the cases investigated). Rounding fixes that, and it adds a noise floor of rough
 is `lid_2x2x3_fit_sweep`, which `generate.py` keeps in full precision (`FULL_PRECISION`)
 because float32 rounding made the import drop a wedge there.
 
-The suite currently has 91 tests (`swift build --skip-update && swift test --skip-update`), all passing. `ProductionTests`
+The suite currently has 103 tests (`swift build --skip-update && swift test --skip-update`), all passing. `ProductionTests`
 build the default configuration with `cornerSegments == nil` and Cadova's default segmentation,
 as the exporter does, and check volume, bounds, symmetric difference and the closed bin/lid
 interference against the references (with the original lid fit preset); `LidFitTests` measure
 the lid clearance, the slot roof and the tongue chamfer by ray casts on the closed assembly;
 `DetentTests` measure the detent (the bump's overlap with the plate edge, its plan-view angles,
 the closed seat in all four lid directions, and a slide sweep of the overlap) by ray casts and
-intersection volumes. `ValidationTests` also checks that `divMultiple` of 0 or less is clamped. The closed bin and
+intersection volumes. `ColoredPartsTests` checks the color split: the exact partitions (for the
+default bin, the production segmentation, a 3x2x3 bin with the lid up, the original preset and a
+multisize bin), that the dividers start at the pocket floor and stay clear of the wall, the
+hollow bin without a Dividers part, the part names and colors of every colored model, their
+placement against the uncolored models, and the names and colors in an exported 3MF.
+`ValidationTests` also checks that `divMultiple` of 0 or less is clamped. The closed bin and
 lid assemblies have no OpenSCAD CLI reference (`lid-bin.scad` uses them for preview only), so
 the lid placement there is checked by footprint, shift and overlap tests instead.
 

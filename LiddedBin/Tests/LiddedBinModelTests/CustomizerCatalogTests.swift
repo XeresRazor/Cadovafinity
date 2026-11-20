@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-import Cadova
+@_spi(ParameterInternals) import Cadova
 @testable import LiddedBinModel
 
 /// Checks the customizer's parameter catalog of the real `lidded-bin` executable.
@@ -96,6 +96,9 @@ struct CustomizerCatalogTests {
     static let shared = ["Grid width", "Grid depth", "Height style", "Internal block height",
                          "Lid direction", "Lip grips"]
     static let fit = ["Lid clearance", "Lid chamfer", "Detent interference"]
+    static let binColors = ["Bin color", "Divider color"]
+    static let lidColors = ["Lid rim color", "Lid center color"]
+    static let colors = binColors + lidColors
 
     func models(_ catalog: Catalog) throws -> (bin: Model, lid: Model, open: Model) {
         let byName = Dictionary(uniqueKeysWithValues: catalog.models.map { ($0.name, $0) })
@@ -123,7 +126,7 @@ struct CustomizerCatalogTests {
             #expect(!lid.labels.contains(label), "\(label)")
         }
         #expect(lid.labels == ["Grid width", "Grid depth", "Height style", "Height",
-                               "Internal block height", "Lid direction", "Lip grips"] + Self.fit)
+                               "Internal block height", "Lid direction", "Lip grips"] + Self.fit + Self.lidColors)
         // Both parts depend on every lid fit control, so every tab lists them after Lip grips,
         // with one declaration each
         for tab in [bin, lid, open] {
@@ -148,6 +151,47 @@ struct CustomizerCatalogTests {
             let tab = try #require(catalog.models.first { $0.name == name })
             #expect(tab.labels == open.labels, "\(name)")
             #expect(tab.parameters.map(\.key) == open.parameters.map(\.key), "\(name)")
+        }
+    }
+
+    @Test func `each tab lists the colors of its parts`() throws {
+        try Self.requireExecutable()
+        let catalog = try Self.catalog()
+        let (bin, lid, open) = try models(catalog)
+        let byName = Dictionary(uniqueKeysWithValues: catalog.models.map { ($0.name, $0) })
+        let closed = try #require(byName["Bin and lid (closed)"])
+        let separated = try #require(byName["Bin and lid (separated)"])
+
+        // The geometry controls are those of the tabs without colors, in the same order, and the
+        // colors come after them
+        let geometry = ["Grid width", "Grid depth", "Height style", "Height", "Internal block height",
+                        "Lid direction", "Lip grips"] + Self.fit
+        #expect(bin.labels == geometry + Self.binOnly + Self.binColors)
+        #expect(lid.labels == geometry + Self.lidColors)
+        for tab in [open, closed, separated] {
+            #expect(tab.labels == geometry + Self.binOnly + Self.colors, "\(tab.name)")
+        }
+
+        let d = LiddedBinColors.defaults
+        let expected = ["Bin color": d.binBody, "Divider color": d.dividers,
+                        "Lid rim color": d.lidRim, "Lid center color": d.lidCenter]
+        #expect(expected["Bin color"]?.parameterString == "#587a9e")
+        #expect(expected["Divider color"]?.parameterString == "#e8912d")
+        #expect(expected["Lid rim color"]?.parameterString == "#587a9e")
+        #expect(expected["Lid center color"]?.parameterString == "#c8cdd6")
+        for tab in [bin, lid, open, closed, separated] {
+            for p in tab.parameters where Self.colors.contains(p.label) {
+                #expect(p.type == "color", "\(tab.name) \(p.label)")
+                #expect(p.default == .string(try #require(expected[p.label]).parameterString), "\(tab.name) \(p.label)")
+                // One declaration each, shared by every tab that lists it
+                let owner = Self.binColors.contains(p.label) ? bin : lid
+                #expect(p.key == owner.parameter(p.label)?.key, "\(tab.name) \(p.label)")
+            }
+        }
+        // Only the color controls are colors
+        for tab in [bin, lid, open] {
+            #expect(tab.parameters.filter { $0.type == "color" }.map(\.label)
+                    == tab.labels.filter(Self.colors.contains), "\(tab.name)")
         }
     }
 
@@ -226,7 +270,7 @@ struct CustomizerCatalogTests {
         #expect(number("Lid chamfer") == d.lidChamfer)
         #expect(number("Detent interference") == d.detentInterference)
         #expect(d.detentInterference == 0.25)
-        #expect(all.count == 18)
+        #expect(all.count == 22)
 
         func range(_ label: String) -> ClosedRange<Double>? {
             guard let p = all[label], let lo = p.minimum, let hi = p.maximum else { return nil }

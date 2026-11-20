@@ -10,13 +10,18 @@ import LiddedBinModel
 //   the three lid fit controls) are read in the project body and appear on every tab;
 // - the bin-only settings (interior style, compartments, dividers, size multiple) are declared in
 //   the project body, so the Bin and assembly tabs share their values, but are read only
-//   inside those models, so the Lid tab does not list them.
+//   inside those models, so the Lid tab does not list them;
+// - the four part colors are declared in the project body and read only by the models that have
+//   those parts: the Bin tab lists the bin and divider colors, the Lid tab the two lid colors,
+//   and the assembly tabs all four. They only color the parts and do not change the geometry.
 // A declaration alone does not list a parameter; only reading it does. The conditional
 // parameters rely on that: they are read only when they matter.
 //
-// Every default comes from `LiddedBinInput.defaults`.
+// Every default comes from `LiddedBinInput.defaults`, and the colors from
+// `LiddedBinColors.defaults`.
 
 let defaults = LiddedBinInput.defaults
+let defaultColors = LiddedBinColors.defaults
 
 await Project(packageRelative: "Models") {
     Metadata(
@@ -74,6 +79,21 @@ await Project(packageRelative: "Models") {
     @Parameter("Detent interference", in: LiddedBinLimits.detentInterference, step: 0.05, unit: "mm",
                description: "How far the bump on the bin overlaps the lid's edge as the lid slides past it. More is a firmer click and a stiffer lid; the original model used 0.15.")
     var detentInterference = defaults.detentInterference
+
+    // Colors: each model is made of named parts in these colors, so a slicer can print them in
+    // different filaments
+
+    @Parameter("Bin color", description: "The color of the bin body: the outer wall, the lid slot, the floor and the feet")
+    var binColor = defaultColors.binBody
+
+    @Parameter("Divider color", description: "The color of the dividers between the compartments")
+    var dividerColor = defaultColors.dividers
+
+    @Parameter("Lid rim color", description: "The color of the lid's raised rim and the lip that slides in the bin's slot")
+    var lidRimColor = defaultColors.lidRim
+
+    @Parameter("Lid center color", description: "The color of the flat center of the lid")
+    var lidCenterColor = defaultColors.lidCenter
 
     // Bin only: declared here so that the Bin and assembly tabs share them, read only in
     // those two models
@@ -150,19 +170,37 @@ await Project(packageRelative: "Models") {
         return input
     }
 
+    // The colors of each model, read only inside the models that have those parts
+    let binColors: @Sendable () -> LiddedBinColors = {
+        var colors = defaultColors
+        colors.binBody = binColor
+        colors.dividers = dividerColor
+        return colors
+    }
+    let lidColors: @Sendable () -> LiddedBinColors = {
+        var colors = defaultColors
+        colors.lidRim = lidRimColor
+        colors.lidCenter = lidCenterColor
+        return colors
+    }
+    let allColors: @Sendable () -> LiddedBinColors = {
+        LiddedBinColors(binBody: binColor, dividers: dividerColor,
+                        lidRim: lidRimColor, lidCenter: lidCenterColor)
+    }
+
     await Model("Bin") {
-        LiddedBinDesign(binInput().configuration).geometry(for: .bin)
+        LiddedBinDesign(binInput().configuration).coloredGeometry(for: .bin, colors: binColors())
     }
     await Model("Lid") {
-        LiddedBinDesign(lidInput.configuration).geometry(for: .lidOnPlate)
+        LiddedBinDesign(lidInput.configuration).coloredGeometry(for: .lidOnPlate, colors: lidColors())
     }
     await Model("Bin and lid (closed)") {
-        LiddedBinDesign(binInput().configuration).geometry(for: .bothClosed)
+        LiddedBinDesign(binInput().configuration).coloredGeometry(for: .bothClosed, colors: allColors())
     }
     await Model("Bin and lid (separated)") {
-        LiddedBinDesign(binInput().configuration).geometry(for: .bothSeparated)
+        LiddedBinDesign(binInput().configuration).coloredGeometry(for: .bothSeparated, colors: allColors())
     }
     await Model("Bin and lid (open)") {
-        LiddedBinDesign(binInput().configuration).geometry(for: .bothOpen)
+        LiddedBinDesign(binInput().configuration).coloredGeometry(for: .bothOpen, colors: allColors())
     }
 }

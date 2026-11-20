@@ -66,9 +66,10 @@ public struct LiddedBinConfiguration: Sendable {
     public var lidOrientation: LidOrientation = .left
     /// div_pattern
     public var compartmentPattern: CompartmentPattern = .grid
-    /// divx
+    /// divx: the number of compartments along X. 1 is a single compartment with no dividers, N gives
+    /// N - 1 dividers, and 0 also gives one open space.
     public var divX = 6
-    /// divy
+    /// divy: the number of compartments along Y, counted as `divX` is.
     public var divY = 6
     /// div_multiple
     public var divMultiple = 2.0

@@ -188,6 +188,47 @@ struct ColoredPartsTests {
         #expect(production { $0.divX = 0 }.binDividers(pockets: nil) == nil)
     }
 
+    /// The compartment counts are documented as: 1 is a single compartment with no dividers, 2 adds
+    /// one divider, and each further compartment adds another (N compartments, N - 1 dividers).
+    /// 0 gives the same open bin as 1, up to the interior corners.
+    @Test func `compartment counts give one fewer divider and 0 and 1 give none`() async throws {
+        // With one compartment along Y, every divider is a separate wall
+        for n in 2...5 {
+            let d = production { $0.divX = n; $0.divY = 1 }
+            let dividers = try #require(d.binDividers(pockets: d.pockets()))
+            let walls = try await ModelFileGenerator.evaluate { evaluator in
+                await evaluator.components(of: dividers).count
+            }
+            #expect(walls == n - 1, "\(n) compartments: \(walls) dividers")
+        }
+        for (x, y) in [(0, 0), (1, 1), (0, 1), (1, 0), (1, 6), (6, 1)] where x < 2 && y < 2 {
+            let parts = try await partInfo(production { $0.divX = x; $0.divY = y }.coloredGeometry(for: .bin, colors: .defaults))
+            #expect(!parts.contains { $0.name == LiddedBinDesign.dividersPartName }, "\(x) by \(y)")
+        }
+        // 1 compartment along X with 2 along Y has one divider, along the other axis
+        let alongY = try await partInfo(production { $0.divX = 1; $0.divY = 2 }.coloredGeometry(for: .bin, colors: .defaults))
+        #expect(alongY.contains { $0.name == LiddedBinDesign.dividersPartName })
+    }
+
+    /// 0 and 1 compartments give nearly the same bin. A single compartment keeps a thin layer of
+    /// material (about 0.4 mm) on the inside of the wall, which 0 cuts away: measured for the 2x2x3
+    /// default bin at 64 segments, 0 is 23118 mm^3, 1 is 24804 mm^3, and they differ by 1686 mm^3
+    /// (6.8 percent of the volume), all of it in a ring along the wall between z 6.1 and 20.9.
+    @Test func `0 and 1 compartments differ only in a thin layer along the wall`() async throws {
+        let zero = production { $0.divX = 0; $0.divY = 0 }.geometry(for: .bin).withSegmentation(count: 64)
+        let one = production { $0.divX = 1; $0.divY = 1 }.geometry(for: .bin).withSegmentation(count: 64)
+        let difference = Union {
+            zero.subtracting { one }
+            one.subtracting { zero }
+        }
+        let (a, b, d) = try await ModelFileGenerator.evaluate { evaluator in
+            (await evaluator.measurements(of: zero).volume, await evaluator.measurements(of: one).volume,
+             await evaluator.measurements(of: difference).volume)
+        }
+        #expect(abs(a - 23118) < 20 && abs(b - 24804) < 20 && abs(d - 1686) < 20, "\(a) \(b) \(d)")
+        #expect(a < b && d / b < 0.1)
+    }
+
     struct PartInfo: Sendable {
         var name: String
         var material: Material?

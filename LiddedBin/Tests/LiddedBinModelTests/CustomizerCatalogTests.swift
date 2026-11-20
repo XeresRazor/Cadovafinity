@@ -92,7 +92,7 @@ struct CustomizerCatalogTests {
         guard FileManager.default.fileExists(atPath: executable.path) else { throw CatalogError.missing }
     }
 
-    static let binOnly = ["Interior style", "Compartments", "Dividers X", "Dividers Y"]
+    static let binOnly = ["Interior style", "Compartment layout", "Compartments X", "Compartments Y"]
     static let shared = ["Grid width", "Grid depth", "Height style", "Internal block height",
                          "Lid direction", "Lip grips"]
     static let fit = ["Lid clearance", "Lid chamfer", "Detent interference"]
@@ -220,7 +220,7 @@ struct CustomizerCatalogTests {
         let defaults = try Self.catalog()
         let (bin, lid, open) = try models(defaults)
         #expect(!bin.labels.contains("Size multiple") && !open.labels.contains("Size multiple"))
-        let pattern = try #require(bin.parameter("Compartments"))
+        let pattern = try #require(bin.parameter("Compartment layout"))
         let multi = try models(try Self.catalog(values: [pattern.key: CompartmentPattern.multiSize.parameterString]))
         #expect(multi.bin.labels.contains("Size multiple") && multi.open.labels.contains("Size multiple"))
         #expect(!multi.lid.labels.contains("Size multiple") && !lid.labels.contains("Size multiple"))
@@ -236,7 +236,7 @@ struct CustomizerCatalogTests {
         for s in HeightStyle.allCases {
             var values = [style.key: s.parameterString]
             let catalog = try Self.catalog(values: values)
-            let pattern = try #require(try models(catalog).bin.parameter("Compartments"))
+            let pattern = try #require(try models(catalog).bin.parameter("Compartment layout"))
             values[pattern.key] = CompartmentPattern.multiSize.parameterString
             for model in try Self.catalog(values: values).models {
                 for p in model.parameters { all[p.label] = p }
@@ -262,9 +262,9 @@ struct CustomizerCatalogTests {
         #expect(string("Lid direction") == d.lidOrientation.parameterString)
         #expect(string("Lip grips") == d.lipGrips.parameterString)
         #expect(string("Interior style") == d.interiorStyle.parameterString)
-        #expect(string("Compartments") == d.compartmentPattern.parameterString)
-        #expect(number("Dividers X") == Double(d.divX))
-        #expect(number("Dividers Y") == Double(d.divY))
+        #expect(string("Compartment layout") == d.compartmentPattern.parameterString)
+        #expect(number("Compartments X") == Double(d.divX))
+        #expect(number("Compartments Y") == Double(d.divY))
         #expect(number("Size multiple") == d.divMultiple)
         #expect(number("Lid clearance") == d.lidClearance)
         #expect(number("Lid chamfer") == d.lidChamfer)
@@ -282,8 +282,8 @@ struct CustomizerCatalogTests {
         #expect(range("Height") == LiddedBinLimits.unitsHeight)
         #expect(range("Internal height") == LiddedBinLimits.internalHeight)
         #expect(range("Overall height") == LiddedBinLimits.externalHeight)
-        #expect(range("Dividers X") == doubles(LiddedBinLimits.dividers))
-        #expect(range("Dividers Y") == doubles(LiddedBinLimits.dividers))
+        #expect(range("Compartments X") == doubles(LiddedBinLimits.dividers))
+        #expect(range("Compartments Y") == doubles(LiddedBinLimits.dividers))
         #expect(range("Size multiple") == LiddedBinLimits.divMultiple)
         #expect(range("Lid clearance") == LiddedBinLimits.lidClearance)
         #expect(range("Lid chamfer") == LiddedBinLimits.lidChamfer)

@@ -8,7 +8,7 @@ import LiddedBinModel
 // the project's own content reads it, and on a model's tab when that model reads it. So:
 // - the settings both the bin and the lid depend on (size, height, lid direction, lip grips, and
 //   the three lid fit controls) are read in the project body and appear on every tab;
-// - the bin-only settings (interior style, compartments, dividers, size multiple) are declared in
+// - the bin-only settings (interior style, compartment layout, compartment counts, size multiple) are declared in
 //   the project body, so the Bin and assembly tabs share their values, but are read only
 //   inside those models, so the Lid tab does not list them;
 // - the four part colors are declared in the project body and read only by the models that have
@@ -101,15 +101,15 @@ await Project(packageRelative: "Models") {
     @Parameter("Interior style", description: "The shape of the bin floor (Interior_Style)")
     var interiorStyle = defaults.interiorStyle
 
-    @Parameter("Compartments", description: "An equal grid, or compartments of two sizes (div_pattern)")
+    @Parameter("Compartment layout", description: "An equal grid, or compartments of two sizes (div_pattern)")
     var compartmentPattern = defaults.compartmentPattern
 
-    @Parameter("Dividers X", in: LiddedBinLimits.dividers,
-               description: "Compartments along X (divx); 0 gives one open compartment with no dividers")
+    @Parameter("Compartments X", in: LiddedBinLimits.dividers, unit: "compartments",
+               description: "Number of compartments along X (divx). 1 is a single open compartment; each extra compartment adds a divider. 0 gives the same open bin.")
     var divX = defaults.divX
 
-    @Parameter("Dividers Y", in: LiddedBinLimits.dividers,
-               description: "Compartments along Y (divy); 0 gives one open compartment with no dividers")
+    @Parameter("Compartments Y", in: LiddedBinLimits.dividers, unit: "compartments",
+               description: "Number of compartments along Y (divy). 1 is a single open compartment; each extra compartment adds a divider. 0 gives the same open bin.")
     var divY = defaults.divY
 
     @Parameter("Size multiple", in: LiddedBinLimits.divMultiple, step: 0.5,

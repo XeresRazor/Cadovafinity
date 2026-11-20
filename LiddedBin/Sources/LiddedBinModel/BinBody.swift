@@ -91,8 +91,10 @@ extension LiddedBinDesign {
     ///
     /// Deliberate deviation from OpenSCAD: `pockets == nil` cuts the whole interior (the
     /// `interiorCut` rounded rectangle with its own corners), giving a hollow bin with one open
-    /// compartment. The solid result is an artifact of the empty-children quirk, not a design
-    /// intent.
+    /// compartment. It is not the same bin as a single compartment (one pocket): the pocket stops
+    /// at the 1.6 mm wall line, while `interiorCut` reaches about 0.45 mm further, so the walls of
+    /// the open bin are thinner. The solid result is an artifact of the empty-children quirk, not a
+    /// design intent.
     func binSolid(pockets: (any Geometry3D)?) -> any Geometry3D {
         Union {
             binWall()

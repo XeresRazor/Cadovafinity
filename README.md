@@ -4,14 +4,14 @@ A Gridfinity bin with a sliding lid that you can adjust in a web page, built wit
 
 **Web customizer: <https://xeresrazor.github.io/Cadovafinity/>**
 
-Pick the grid size, height, dividers, finger grips and lid direction, tune the lid fit, watch the 3D preview, and download the bin, the lid or both as 3MF files for your slicer.
+Pick the grid size, height, compartments, finger grips and lid direction, tune the lid fit, watch the 3D preview, and download the bin, the lid or both as 3MF files for your slicer.
 
 The design is a port of smkent's OpenSCAD model "Gridfinity Bins with Lids" to Swift. The geometry is checked against the original OpenSCAD output, with a few deliberate changes listed below.
 
 ## What you can adjust
 
 - Grid width and depth (1 to 6 cells), and the height as 7 mm units, internal height or overall height.
-- Compartments: an equal grid of dividers, or two compartment sizes. Zero dividers gives one open compartment.
+- Compartment layout: an equal grid, or compartments of two sizes. Compartments X and Y set the number of compartments along each axis: 1 is a single open compartment, and 2 is the smallest count that adds a divider (N compartments have N minus 1 dividers). 0 gives the same open bin.
 - Lip grips (none, along X, along Y, both), lid direction (four ways) and the interior style.
 - Five downloads: **Bin**, **Lid**, **Bin and lid (closed)**, **Bin and lid (separated)** (side by side on the build plate, ready to import into a slicer) and **Bin and lid (open)**.
 - Colors for multi-color or multi-filament printing: four color pickers (bin, dividers, lid rim and lip, lid center). Each model downloads as separate named parts in the 3MF, so a slicer can print the dividers or the lid rim in their own color.
@@ -24,7 +24,7 @@ The fit defaults are starting values chosen from measurements of the model, then
 
 ## Differences from the original
 
-- A bin with no dividers (`divx` or `divy` set to 0) is hollow. The original model leaves it solid.
+- `divx` or `divy` set to 0 gives an open bin whose interior is cut as one space. The original model leaves it solid. 1 also gives a single compartment, with walls about 0.45 mm thicker than the 0 bin (about 1,690 mm³, 7%, more material for the default 2x2x3 bin). 2 is the smallest count that adds a divider.
 - The lid fit is tighter, the slot roof and lid chamfer are larger, and the detent is a seated catch. The `openSCADOriginal` preset in the code reproduces the original geometry exactly, and the reference tests use it.
 - The custom compartment pattern, which needs editing the source, is not included. The web page cannot offer it.
 

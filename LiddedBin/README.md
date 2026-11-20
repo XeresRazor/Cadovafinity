@@ -46,8 +46,8 @@ variables in `lid-bin.scad`.
 | `lipGrips` (`none`, `x`, `y`, `xy`) | `Lip_Grips` | `xy` |
 | `lidOrientation` (`up`, `down`, `left`, `right`) | `Lid_Orientation` | `left` |
 | `compartmentPattern` (`grid`, `multiSize`) | `div_pattern` (`default`, `multisize`) | `grid` |
-| `divX` | `divx` | 6 |
-| `divY` | `divy` | 6 |
+| `divX` | `divx`: the number of compartments along X (N compartments have N - 1 dividers) | 6 |
+| `divY` | `divy`: the number of compartments along Y | 6 |
 | `divMultiple` | `div_multiple` (clamped to 1...5) | 2 |
 | `lidClearance` | side gap between lid and slot (`0.5 + 3 * lid_hfit_tolerance` inset, 0.45 per side) | 0.20 (original-equivalent 0.45; clamped to 0.10...0.6) |
 | `lidChamfer` | rise of the slot roof, the slope that holds the lid down; the lid's edge chamfer follows it, about 0.6 times as tall | 1.4 (original-equivalent 0.8; clamped to 0.8...1.8) |
@@ -169,8 +169,8 @@ intersection and the symmetric difference). The dividers are the bin inside the 
 the pockets (in plan view, the rectangle the pockets tile minus the pockets), within the interior
 footprint from the pocket floor up, minus the wall. So the color changes at the pocket floor, a
 divider that stands on the ridge between two feet takes the ridge's top with it, and a ridge that
-crosses the middle of a compartment stays the body color. A bin with no dividers (Dividers X or Y
-of 0) has only the Bin body part. `.binSlice` is one Bin body part.
+crosses the middle of a compartment stays the body color. A bin with no dividers (Compartments X or Y of 0, or
+both 1) has only the Bin body part. `.binSlice` is one Bin body part.
 
 Each part is a separate object in the exported 3MF, named as above, with its color as a 3MF
 material color group (`m:colorgroup`). The parts keep their positions, so they sit together as
@@ -222,10 +222,10 @@ itself does not use `@Parameter`.
 | Lid chamfer | 0.8...1.8 mm, step 0.1 | 1.4 | rise of the slot roof that holds the lid down; the lid's chamfer follows it, about 0.6 times as tall (original value 0.8) | all |
 | Detent interference | 0.10...0.40 mm, step 0.05 | 0.25 | overlap of the bump with the lid's edge; more is a firmer click and a stiffer lid (original value 0.15) | all |
 | Interior style | Minimal, Partially raised | Minimal | `Interior_Style` | Bin and the three assembly tabs |
-| Compartments | Equal grid, Two sizes | Equal grid | `div_pattern` | Bin and the three assembly tabs |
-| Dividers X | 0...12 | 6 | `divx` | Bin and the three assembly tabs |
-| Dividers Y | 0...12 | 6 | `divy` | Bin and the three assembly tabs |
-| Size multiple | 1...5, step 0.5 | 2 | `div_multiple` | Bin and the three assembly tabs, when Compartments is Two sizes |
+| Compartment layout | Equal grid, Two sizes | Equal grid | `div_pattern` | Bin and the three assembly tabs |
+| Compartments X | 0...12 compartments | 6 | `divx`: the number of compartments along X. 1 is a single open compartment, 2 adds one divider, N adds N - 1; 0 gives the same open bin | Bin and the three assembly tabs |
+| Compartments Y | 0...12 compartments | 6 | `divy`: the number of compartments along Y, counted as Compartments X | Bin and the three assembly tabs |
+| Size multiple | 1...5, step 0.5 | 2 | `div_multiple` | Bin and the three assembly tabs, when Compartment layout is Two sizes |
 | Bin color | color picker | `#587A9E` | none (colors the Bin body part) | Bin and the three assembly tabs |
 | Divider color | color picker | `#E8912D` | none (colors the Dividers part) | Bin and the three assembly tabs |
 | Lid rim color | color picker | `#587A9E` | none (colors the Lid rim and lip part) | Lid and the three assembly tabs |
@@ -355,10 +355,15 @@ the lid placement there is checked by footprint, shift and overlap tests instead
 
 - Custom compartment pockets are dropped: the `custom` value of `div_pattern` and its text
   notice are not ported, because `Text` cannot use system fonts in the planned web customizer.
-- A `divX` or `divY` of 0 (grid pattern) gives an open hollow bin with no dividers. The original
-  OpenSCAD model gives a solid bin there, because the interior cut intersects with an empty
+- Compartments X or Y (`divX`, `divY`) set to 0 (grid pattern) gives an open bin whose interior is
+  cut as one space, whatever the other axis is set to. The original OpenSCAD model leaves it
+  solid there, because the interior cut intersects with an empty
   `children()` and cuts nothing. The port deliberately deviates: with no pockets it cuts the whole
-  interior. `binSlice` is therefore a hollow ring. The references for these cases
+  interior, so `binSlice` is a hollow ring. A count of 1 also gives one compartment, but it is not
+  the same bin: the single pocket stops at the 1.6 mm wall line, while the cut for 0 reaches about
+  0.45 mm further, so the 0 bin has thinner walls. For the default 2x2x3 bin (64 segments) the 0
+  bin is 23,118 mm^3 and the 1 bin is 24,804 mm^3, a difference of 1,686 mm^3 (6.8 percent).
+  2 is the smallest count that adds a divider; N compartments have N - 1 dividers. The references for these cases
   (`bin_1x1x2_nogrips_div0`, `bin_slice_2x2x3`, `bin_slice_1x1x2_up`) come from a patched copy of
   `lid-bin.scad` that `generate.py` writes to `Reference/generated/` (git-ignored); the original
   file is not edited.

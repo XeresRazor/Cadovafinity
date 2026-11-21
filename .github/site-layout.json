@@ -1,0 +1,4 @@
+[
+  { "id": "lidded",    "package-path": "LiddedBin",             "product": "lidded-bin",           "site-path": "bins/lidded" },
+  { "id": "baseplate", "package-path": "GridfinityCustomizers", "product": "gridfinity-baseplate", "site-path": "baseplate" }
+]

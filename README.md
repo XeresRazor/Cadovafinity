@@ -2,7 +2,9 @@
 
 A Gridfinity bin with a sliding lid that you can adjust in a web page, built with Swift and [Cadova](https://cadova.org).
 
-**Web customizer: <https://xeresrazor.github.io/Cadovafinity/>**
+**Web customizer: <https://xeresrazor.github.io/Cadovafinity/bins/lidded/>**
+
+The site root, <https://xeresrazor.github.io/Cadovafinity/>, redirects to that page, so older links keep working. The site layout also reserves `baseplate/` for the baseplate customizer of the planned `GridfinityCustomizers` package, which is not published yet.
 
 Pick the grid size, height, compartments, finger grips and lid direction, tune the lid fit, watch the 3D preview, and download the bin, the lid or both as 3MF files for your slicer.
 
@@ -38,7 +40,8 @@ The fit defaults are starting values chosen from measurements of the model, then
 | [`LiddedBin/`](LiddedBin/README.md) | The lidded bin: model library, the `lidded-bin` executable that defines the customizer, and the OpenSCAD reference generator. 120 tests. |
 | [`GridfinityRebuilt/`](GridfinityRebuilt/README.md) | A Swift/Cadova port of the core of [gridfinity-rebuilt-openscad](https://github.com/kennetek/gridfinity-rebuilt-openscad), plus `GridfinityTestSupport`, the helpers that compare geometry with OpenSCAD output. 33 tests. |
 | `docs/superpowers/` | Design notes, specs and implementation plans. |
-| `.github/workflows/customizer.yml` | Builds the customizer and publishes it to GitHub Pages on every push to `main`. |
+| `.github/workflows/customizer.yml` | Builds every customizer listed in `.github/site-layout.json` in parallel jobs, assembles one site with `.github/scripts/assemble-site.sh` and publishes it to GitHub Pages on every push to `main`. |
+| `.github/site-layout.json` | The list of customizers: id, package, product and the page's path on the site. |
 
 ## Build and test
 
@@ -53,7 +56,7 @@ swift test
 
 Tests that compare against OpenSCAD need [OpenSCAD](https://openscad.org) installed. Generate the reference meshes once with `python3 -I Reference/generate.py` in `LiddedBin` (and in `GridfinityRebuilt`); the generated STL files are git-ignored. See each package's README for details.
 
-To build the customizer page locally you need the Swift 6.4.0 toolchain from swift.org, then `swift package generate-customizer` in `LiddedBin`. The GitHub workflow does this on every push to `main`.
+To build the customizer page locally you need the Swift 6.4.0 toolchain from swift.org, then `swift package generate-customizer` in `LiddedBin`. The GitHub workflow does this for each customizer on every push to `main`. `bash .github/scripts/test-assemble-site.sh` tests the site assembly (it needs `jq`).
 
 ## Licenses and credits
 

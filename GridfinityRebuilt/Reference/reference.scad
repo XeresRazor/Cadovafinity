@@ -59,4 +59,9 @@ else if (case == "cut_move_marker_dh0") {
 else if (case == "pattern_linear") {
     pattern_linear(3, 2, 10, 7) translate([1, 2, 0]) cube([2, 3, 4]);
 }
+else if (case == "hole_style1") { block_base_hole(1, 0); }
+else if (case == "hole_style2") { block_base_hole(2, 0); }
+else if (case == "hole_style3") { block_base_hole(3, 0); }
+else if (case == "hole_style2_off") { block_base_hole(2, -0.5); }
+else if (case == "hole_refined") { refined_hole(); }
 // CASES: later tasks append `else if (case == "...") { ... }` blocks above this line.

@@ -18,7 +18,8 @@ FN = 64  # keep equal to the segment count used by GridfinityTestSupport measure
 CASES = ["unit_cube", "profile_base", "profile_wall", "profile_wall2", "rounded_rectangle",
          "block_base_solid", "block_base_solid_offset",
          "block_wall_2x1", "block_wall_1x2", "block_wall_lipless_1x1", "block_bottom_2x1",
-         "init_2x1x3", "init_2x1x3_lipless", "cut_move_marker", "cut_move_marker_dh0", "pattern_linear"]
+         "init_2x1x3", "init_2x1x3_lipless", "cut_move_marker", "cut_move_marker_dh0", "pattern_linear",
+         "hole_style1", "hole_style2", "hole_style3", "hole_style2_off", "hole_refined"]
 
 # Cases that reuse a scad case with extra OpenSCAD defines. A later -D overrides the file's
 # own assignment, and derived values such as d_magic (computed in standard.scad from d_wall)

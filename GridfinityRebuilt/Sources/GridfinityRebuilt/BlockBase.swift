@@ -57,3 +57,32 @@ extension Dimensions {
         .translated(z: hBase)
     }
 }
+
+extension Dimensions {
+    /// Ports OpenSCAD `block_base`: one foot of `nx` by `ny` grid cells (`blockBaseSolid`) with
+    /// four holes, one per corner, at `(l / 2 - dHoleFromSide, l / 2 - dHoleFromSide)` rotated a
+    /// quarter turn at a time. Style 0 has no holes, styles 1 to 3 use `blockBaseHole` and style 4
+    /// uses `refinedHole` lifted by `2 * hSlit`. The hole positions use the grid pitch `length`,
+    /// not the foot size.
+    public func blockBase(
+        nx: Double = 1,
+        ny: Double = 1,
+        length: Double? = nil,
+        styleHole: Int,
+        offset o: Double = 0
+    ) -> any Geometry3D {
+        let l = length ?? lGrid
+        let p = l / 2 - dHoleFromSide
+        return blockBaseSolid(nx: nx, ny: ny, length: l, offset: o)
+            .subtracting {
+                if styleHole > 0 {
+                    patternCircular(
+                        count: 4,
+                        styleHole == 4
+                            ? refinedHole().translated(x: p, y: p, z: hSlit * 2)
+                            : blockBaseHole(style: styleHole, offset: o).translated(x: p, y: p)
+                    )
+                }
+            }
+    }
+}

@@ -59,4 +59,18 @@ else if (case == "cut_move_marker_dh0") {
 else if (case == "pattern_linear") {
     pattern_linear(3, 2, 10, 7) translate([1, 2, 0]) cube([2, 3, 4]);
 }
+else if (case == "hole_style1") { block_base_hole(1, 0); }
+else if (case == "hole_style2") { block_base_hole(2, 0); }
+else if (case == "hole_style3") { block_base_hole(3, 0); }
+else if (case == "hole_style2_off") { block_base_hole(2, -0.5); }
+else if (case == "hole_refined") { refined_hole(); }
+else if (case == "base_1x1_style0")        { gridfinityBase(1, 1, l_grid, 0, 0, 0, 0, true, false); }
+else if (case == "base_2x1_style1")        { gridfinityBase(2, 1, l_grid, 0, 0, 1, 0, true, false); }
+else if (case == "base_2x2_style2")        { gridfinityBase(2, 2, l_grid, 0, 0, 2, 0, true, false); }
+else if (case == "base_1x1_style3")        { gridfinityBase(1, 1, l_grid, 0, 0, 3, 0, true, false); }
+else if (case == "base_1x1_style4")        { gridfinityBase(1, 1, l_grid, 0, 0, 4, 0, true, false); }
+else if (case == "base_2x2_corners")       { gridfinityBase(2, 2, l_grid, 0, 0, 2, 0, true, true); }
+else if (case == "base_2x2_baseplate")     { gridfinityBase(2, 2, l_grid, 1, 1, 0, 0.5, false, false); }
+else if (case == "base_1_5x1_half")        { gridfinityBase(1.5, 1, l_grid, 0, 0, 0, 0, true, false); }
+else if (case == "base_1x1_offset_neg")    { gridfinityBase(1, 1, l_grid, 0, 0, 2, -1.2, true, false); }
 // CASES: later tasks append `else if (case == "...") { ... }` blocks above this line.

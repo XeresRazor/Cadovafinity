@@ -7,25 +7,64 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
-  publish:
+  # Reads the list of customizers from .github/site-layout.json, the one place that lists them.
+  layout:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+    - uses: actions/checkout@v4
+    - id: matrix
+      run: |
+        echo "matrix=$(jq -c '{include: .}' .github/site-layout.json)" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: layout
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix: ${{ fromJSON(needs.layout.outputs.matrix) }}
+    steps:
+    - uses: actions/checkout@v4
+    - id: customizer
+      uses: tomasf/Cadova/Actions/BuildCustomizer@1.3.0
+      with:
+        package-path: ${{ matrix.package-path }}
+        product: ${{ matrix.product }}
+        upload-pages-artifact: 'false'
+        output: Customizer
+    - uses: actions/upload-artifact@v4
+      with:
+        name: site-${{ matrix.id }}
+        path: ${{ steps.customizer.outputs.path }}
+        if-no-files-found: error
+        overwrite: true
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
     - uses: actions/checkout@v4
-    - uses: tomasf/Cadova/Actions/BuildCustomizer@1.3.0
+    - uses: actions/download-artifact@v4
       with:
-        package-path: LiddedBin
-        product: lidded-bin
+        pattern: site-*
+        path: parts
+    - run: bash .github/scripts/assemble-site.sh .github/site-layout.json parts _site lidded
+    - uses: actions/upload-pages-artifact@v3
+      with:
+        path: _site
     - id: deployment
       uses: actions/deploy-pages@v4

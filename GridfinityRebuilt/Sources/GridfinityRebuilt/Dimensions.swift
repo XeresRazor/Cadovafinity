@@ -33,6 +33,18 @@ public struct Dimensions: Sendable {
     public var rF1 = 0.6
     /// Internal fillet radius.
     public var rF2 = 2.8
+    /// Screw hole radius (`r_hole1`).
+    public var rHole1 = 1.5
+    /// Magnet hole radius (`r_hole2`).
+    public var rHole2 = 3.25
+    /// Center-to-center distance between holes (`d_hole`).
+    public var dHole = 26.0
+    /// Distance of a hole from the side of the bin (`d_hole_from_side`).
+    public var dHoleFromSide = 8.0
+    /// Magnet hole depth (`h_hole`).
+    public var hHole = 2.4
+    /// Slit depth, the printer layer height (`h_slit`).
+    public var hSlit = 0.2
 
     public init() {}
 

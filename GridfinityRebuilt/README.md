@@ -12,17 +12,20 @@ the notice of the Gridfinity system the upstream project is based on.
 
 ## Scope
 
-Ported (the core):
+Ported:
 
 - `Dimensions`: the Gridfinity constants and derived values
 - height math: `HeightMode`, `LipStyle`, `Dimensions.binHeight(_:mode:lip:snap:)`
 - profiles: `baseProfile`, `wallProfile`, `lipelessWallProfile`
 - `roundedRectangle2D` and `roundedRectangle`
 - block base, block wall (`sweepRounded`, `blockWall`) and block bottom
+- the base cell: `blockBaseHole`, `refinedHole`, `blockBase`, and `gridfinityBase`
+- `BaseplateDimensions`, the baseplate constants
 - `BinGeometry`, the `gridfinityInit` shell and `cut_move` placement
-- `patternLinear`
+- the helpers `patternLinear` (both overloads), `patternCircular`, `copyMirror`, `roundedSquare` and `clamp`
 
-Not yet ported: the bins generator, the baseplate generator and the cutters.
+Not yet ported: the compartment cutters, the tab styles and scoops, the lite bin and the spiral
+vase modules. The bin and spiral vase customizers are planned.
 
 ## Model
 
@@ -95,7 +98,7 @@ OpenSCAD is required (`/opt/homebrew/bin/openscad`). The script runs `Reference/
 with `$fn = 64`, writes `Reference/reference.json` and `Reference/stl/<case>.stl`.
 `Reference/stl/` is generated and git-ignored.
 
-The suite has 33 tests, all passing.
+The suite has 57 tests, all passing.
 
 ## Known limits
 

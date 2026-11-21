@@ -303,6 +303,9 @@ after changing `main.swift`; `swift test` does not rebuild the executable.
 
 ## Publishing the customizer
 
+The page is published at <https://xeresrazor.github.io/Cadovafinity/bins/lidded/>. The site root
+redirects to it, so the older address <https://xeresrazor.github.io/Cadovafinity/> keeps working.
+
 `swift package generate-customizer` builds a static web page from `lidded-bin`, with the model
 compiled to WebAssembly so it runs in the visitor's browser. The page offers five tabs, one for
 each exported model (`Bin`, `Lid`, `Bin and lid (closed)`, `Bin and lid (separated)` and
@@ -332,9 +335,10 @@ Then open <http://localhost:8000>.
 
 To publish on GitHub Pages, push the repository to GitHub, open Settings, Pages, and set the
 source to GitHub Actions. The workflow `.github/workflows/customizer.yml` at the repository root
-builds `lidded-bin` from the `LiddedBin` folder with Cadova's `BuildCustomizer` action (pinned to
-1.3.0, the Cadova version in `Package.resolved`) and deploys it on every push to `main` or on a
-manual run. The sibling `../GridfinityRebuilt` dependency resolves because both packages are in
+builds every customizer listed in `.github/site-layout.json`, including `lidded-bin` from the
+`LiddedBin` folder, with Cadova's `BuildCustomizer` action (pinned to 1.3.0, the Cadova version in
+`Package.resolved`), assembles them into one site (the lidded bin goes to `bins/lidded/`) and
+deploys it on every push to `main` or on a manual run. The sibling `../GridfinityRebuilt` dependency resolves because both packages are in
 the same checkout.
 
 The page shows the model's author and license (see "Attribution and license"), so it carries the

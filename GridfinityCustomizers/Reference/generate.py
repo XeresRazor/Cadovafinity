@@ -35,6 +35,21 @@ FN = 64  # keep equal to the segment count used by GridfinityTestSupport measure
 # Case name -> list of NAME=VALUE defines, each passed as -D NAME=VALUE (strings quoted).
 CASES = {
     "thin_2x2": ['gridx=2', 'gridy=2', 'style_plate=0'],
+    "weighted_2x2": ['gridx=2', 'gridy=2', 'style_plate=1', 'enable_magnet=true', 'style_hole=2'],
+    "skeleton_2x2": ['gridx=2', 'gridy=2', 'style_plate=2', 'enable_magnet=true', 'style_hole=2'],
+    "skeleton_countersink_nomagnet": [
+        'gridx=2', 'gridy=1', 'style_plate=2', 'enable_magnet=false', 'style_hole=1',
+    ],
+    "skeleton_noholes_nomagnet": [
+        'gridx=1', 'gridy=1', 'style_plate=2', 'enable_magnet=false', 'style_hole=0',
+    ],
+    "screw_together_2x3": ['gridx=2', 'gridy=3', 'style_plate=3', 'n_screws=2'],
+    "screw_together_minimal_2x2": ['gridx=2', 'gridy=2', 'style_plate=4'],
+    "fit_x_drawer": ['gridx=0', 'gridy=2', 'distancex=150', 'fitx=0.5', 'style_plate=0'],
+    "fit_both_drawer": [
+        'gridx=0', 'gridy=0', 'distancex=130', 'distancey=95', 'fitx=-1', 'fity=1', 'style_plate=1',
+    ],
+    "weighted_magnet_off": ['gridx=2', 'gridy=2', 'style_plate=1', 'enable_magnet=false', 'style_hole=0'],
     "cutter_weight": ['case="cutter_weight"'],
     "cutter_skeleton": ['case="cutter_skeleton"'],
     "cutter_countersink": ['case="cutter_countersink"'],

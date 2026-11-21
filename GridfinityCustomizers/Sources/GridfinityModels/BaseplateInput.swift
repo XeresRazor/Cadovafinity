@@ -5,9 +5,9 @@ import GridfinityRebuilt
 /// cannot leave them. The maxima come from the build-time benchmark in
 /// docs/superpowers/notes/2026-11-baseplate-build-times.md.
 public struct BaseplateLimits: Sendable {
-    /// Cells per axis in grid-cells mode. 14 x 14 is the largest square that builds natively in
-    /// under 5 seconds in the slowest style (4.6 s for screw together with 3 screws per cell; 15 x 15
-    /// takes 5.4 s). The build time follows the cell count, so no product cap is needed.
+    /// Cells per axis in grid-cells mode. 10 x 10 (a 420 mm plate) builds natively in 2.2 s in the
+    /// slowest style; 14 x 14 reaches 4.6 s, which a browser build on one thread would exceed.
+    /// The build time follows the cell count, so no product cap is needed.
     public static let gridSize = 1...10
     /// The drawer length per axis in drawer mode, in mm. 42 mm is one cell (`l_grid`), so a
     /// drawer always holds at least one cell. 420 mm is 10 cells, the same maximum as `gridSize`.
@@ -75,6 +75,9 @@ public struct BaseplateInput: Sendable, Equatable {
     public var screwHeadDiameter = 5.0
     public var screwSpacing = 0.5
     public var screwsPerCell = 1
+    /// The color of the part named "Baseplate" in the exported 3MF, a light grey. It does not
+    /// change the geometry, so `configuration` does not carry it.
+    public var color = Color(hex: "#C8CDD6")
 
     public init() {}
 

@@ -41,11 +41,11 @@ await Project(packageRelative: "Models") {
     var gridY = defaults.gridY
 
     @Parameter("Drawer width", in: BaseplateLimits.drawerSize, unit: "mm",
-               description: "The drawer's inside width (distancex). The plate fills it with as many whole cells as fit and pads the rest.")
+               description: "Minimum plate length along X (distancex). The plate is at least this long, so enter slightly less than the drawer's inside width for a loose fit.")
     var drawerX = defaults.drawerX
 
     @Parameter("Drawer depth", in: BaseplateLimits.drawerSize, unit: "mm",
-               description: "The drawer's inside depth (distancey). The plate fills it with as many whole cells as fit and pads the rest.")
+               description: "Minimum plate length along Y (distancey). The plate is at least this long, so enter slightly less than the drawer's inside depth for a loose fit.")
     var drawerY = defaults.drawerY
 
     @Parameter("Align width", in: BaseplateLimits.fit, step: 0.1,

@@ -82,6 +82,16 @@ struct ValidationTests {
         #expect(v.screwDiameter == 6 && v.screwHeadDiameter == 12 && v.screwSpacing == 3)
     }
 
+    @Test func `a screw head smaller than the screw is raised to the screw diameter`() {
+        var c = BaseplateConfiguration()
+        c.screwDiameter = 5; c.screwHeadDiameter = 4
+        var v = c.validated()
+        #expect(v.screwDiameter == 5 && v.screwHeadDiameter == 5)
+        c.screwDiameter = 3.35; c.screwHeadDiameter = 5
+        v = c.validated()
+        #expect(v.screwDiameter == 3.35 && v.screwHeadDiameter == 5)
+    }
+
     @Test func `validation is idempotent`() {
         var c = BaseplateConfiguration()
         c.gridX = 0; c.gridY = 77; c.drawerX = 3; c.drawerY = 1e6

@@ -16,8 +16,8 @@ public struct BaseplateLimits: Sendable {
     /// The range of the fit values (`fitx`, `fity`).
     public static let fit = -1.0...1.0
     // The original has no ranges for the three screw values. These keep the geometry valid:
-    // a channel needs a positive diameter that fits the 42 mm cell, a head must be wider than
-    // the thread, and the gap between heads of one cell cannot push the channels off the cell.
+    // a channel needs a positive diameter that fits the 42 mm cell, a head must be at least as wide as
+    // the thread (`validated()` raises a smaller head to the screw diameter), and the gap between heads of one cell cannot push the channels off the cell.
     public static let screwDiameter = 1.5...6.0
     public static let screwHeadDiameter = 3.0...12.0
     public static let screwSpacing = 0.0...3.0
@@ -29,7 +29,7 @@ private func clamp<T: Comparable>(_ value: T, _ range: ClosedRange<T>) -> T {
 
 public extension BaseplateConfiguration {
     /// A copy with every value clamped to what the model supports. In-range input is returned
-    /// unchanged.
+    /// unchanged. A screw head diameter smaller than the screw diameter is raised to it.
     ///
     /// A `gridX` or `gridY` of 0 means "fill the drawer" and is kept only when the matching
     /// drawer length holds at least one cell: a shorter drawer is raised to one cell (42 mm), so
@@ -47,6 +47,7 @@ public extension BaseplateConfiguration {
         c.screwDiameter = clamp(c.screwDiameter, BaseplateLimits.screwDiameter)
         c.screwHeadDiameter = clamp(c.screwHeadDiameter, BaseplateLimits.screwHeadDiameter)
         c.screwSpacing = clamp(c.screwSpacing, BaseplateLimits.screwSpacing)
+        c.screwHeadDiameter = max(c.screwHeadDiameter, c.screwDiameter)
         return c
     }
 

@@ -90,4 +90,4 @@ python3 -I Reference/generate.py thin_2x2   # one case
 
 ## Web customizer pages
 
-The web customizer pages are built by the repository workflow.
+The repository workflow builds the web customizer pages and publishes them to GitHub Pages. The baseplate page is published at <https://xeresrazor.github.io/Cadovafinity/baseplate/>.

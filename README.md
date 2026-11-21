@@ -4,7 +4,7 @@ A Gridfinity bin with a sliding lid that you can adjust in a web page, built wit
 
 **Web customizer: <https://xeresrazor.github.io/Cadovafinity/bins/lidded/>**
 
-The site root, <https://xeresrazor.github.io/Cadovafinity/>, redirects to that page, so older links keep working. The site layout also reserves `baseplate/` for the baseplate customizer of the planned `GridfinityCustomizers` package, which is not published yet.
+The site root, <https://xeresrazor.github.io/Cadovafinity/>, redirects to that page, so older links keep working. The workflow also publishes the baseplate customizer of the `GridfinityCustomizers` package at <https://xeresrazor.github.io/Cadovafinity/baseplate/>, next to the lidded bin at `bins/lidded/` (both paths come from `.github/site-layout.json`).
 
 Pick the grid size, height, compartments, finger grips and lid direction, tune the lid fit, watch the 3D preview, and download the bin, the lid or both as 3MF files for your slicer.
 
@@ -24,6 +24,10 @@ The design is a port of smkent's OpenSCAD model "Gridfinity Bins with Lids" to S
 
 The fit defaults are starting values chosen from measurements of the model, then checked in cross-section. How the lid feels depends on your printer, so expect to adjust them after a test print.
 
+### Baseplate
+
+The baseplate page has a plate style (thin, weighted, skeletonized, screw together, screw together minimal), and a size set by **Grid width** and **Grid depth** in cells or by **Drawer width** and **Drawer depth** in mm, with **Align width** and **Align depth** placing the padding. **Magnet holes** and **Screw holes** (none, countersink, counterbore) apply to styles with a floor. The screw together styles add **Screw diameter**, **Screw head diameter**, **Screw spacing** and **Screws per cell**. **Color** sets the color of the part in the 3MF.
+
 ## Differences from the original
 
 - The customizer offers heights from 2 units. A 1 unit bin does not work in the original model either: its compartments end below the top of the interior base grid and are sealed under a solid top.
@@ -38,7 +42,8 @@ The fit defaults are starting values chosen from measurements of the model, then
 | Folder | Contents |
 |---|---|
 | [`LiddedBin/`](LiddedBin/README.md) | The lidded bin: model library, the `lidded-bin` executable that defines the customizer, and the OpenSCAD reference generator. 120 tests. |
-| [`GridfinityRebuilt/`](GridfinityRebuilt/README.md) | A Swift/Cadova port of the core of [gridfinity-rebuilt-openscad](https://github.com/kennetek/gridfinity-rebuilt-openscad), plus `GridfinityTestSupport`, the helpers that compare geometry with OpenSCAD output. 33 tests. |
+| [`GridfinityCustomizers/`](GridfinityCustomizers/README.md) | Customizers for the standard Gridfinity components, the baseplate today: the `GridfinityModels` library and the `gridfinity-baseplate` executable that defines its page. 46 tests. |
+| [`GridfinityRebuilt/`](GridfinityRebuilt/README.md) | A Swift/Cadova port of the core of [gridfinity-rebuilt-openscad](https://github.com/kennetek/gridfinity-rebuilt-openscad), plus `GridfinityTestSupport`, the helpers that compare geometry with OpenSCAD output. 57 tests. |
 | `docs/superpowers/` | Design notes, specs and implementation plans. |
 | `.github/workflows/customizer.yml` | Builds every customizer listed in `.github/site-layout.json` in parallel jobs, assembles one site with `.github/scripts/assemble-site.sh` and publishes it to GitHub Pages on every push to `main`. |
 | `.github/site-layout.json` | The list of customizers: id, package, product and the page's path on the site. |

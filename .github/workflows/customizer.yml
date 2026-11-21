@@ -44,6 +44,7 @@ jobs:
         name: site-${{ matrix.id }}
         path: ${{ steps.customizer.outputs.path }}
         if-no-files-found: error
+        overwrite: true
 
   deploy:
     needs: build

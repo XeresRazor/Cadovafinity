@@ -1,6 +1,10 @@
 """Runs OpenSCAD on gridfinity-rebuilt-baseplate.scad for each reference case and records volume and bounding box.
 
 The baseplate file runs its model at include time, so it is run directly with -D overrides.
+Cases in DEFS_CASES test the cutter modules on their own. They run a wrapper written to
+Reference/generated/baseplate-defs.scad at run time (the original is never edited): the baseplate
+source with its top-level gridfinityBaseplate call removed, its includes made absolute, and a
+`case` selector appended; see defs_scad().
 
 Volume and bounds are measured on OpenSCAD's full-precision ASCII STL. The STL kept in
 Reference/stl/ for the symmetric-difference check then has every coordinate rounded to float32,
@@ -23,6 +27,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 SCAD = (HERE / "../../../Lidded Bins/gridfinity-rebuilt-openscad/gridfinity-rebuilt-baseplate.scad").resolve()
 OUT = HERE / "reference.json"
+GENERATED_DIR = HERE / "generated"
 STL_DIR = HERE / "stl"
 OPENSCAD = "/opt/homebrew/bin/openscad"
 FN = 64  # keep equal to the segment count used by GridfinityTestSupport measure()
@@ -30,11 +35,63 @@ FN = 64  # keep equal to the segment count used by GridfinityTestSupport measure
 # Case name -> list of NAME=VALUE defines, each passed as -D NAME=VALUE (strings quoted).
 CASES = {
     "thin_2x2": ['gridx=2', 'gridy=2', 'style_plate=0'],
+    "cutter_weight": ['case="cutter_weight"'],
+    "cutter_skeleton": ['case="cutter_skeleton"'],
+    "cutter_countersink": ['case="cutter_countersink"'],
+    "cutter_counterbore": ['case="cutter_counterbore"'],
+    "cutter_screws_2x3_n2": [
+        'case="cutter_screws_2x3_n2"',
+        'd_screw=3.35', 'd_screw_head=5', 'screw_spacing=0.5', 'n_screws=2',
+    ],
+    "cutter_holes_pattern": ['case="cutter_holes_pattern"'],
 }
+
+# Cases run through the definitions-only wrapper (defs_scad()) instead of the baseplate file.
+DEFS_CASES = {
+    "cutter_weight", "cutter_skeleton", "cutter_countersink", "cutter_counterbore",
+    "cutter_screws_2x3_n2", "cutter_holes_pattern",
+}
+
+# The case selector appended to the wrapper; `case` is set with -D.
+CASE_SELECTOR = """
+case = "";
+if (case == "cutter_weight") cutter_weight();
+if (case == "cutter_skeleton") linear_extrude(5) profile_skeleton();
+if (case == "cutter_countersink") cutter_countersink();
+if (case == "cutter_counterbore") cutter_counterbore();
+if (case == "cutter_screws_2x3_n2") cutter_screw_together(2, 3, 6.4);
+if (case == "cutter_holes_pattern") hole_pattern() { block_base_hole(1); }
+"""
 
 # Cases whose STL keeps OpenSCAD's double-precision coordinates (no float32 rounding), for cases
 # where the rounding makes Manifold's import drop material instead of repairing slivers.
 FULL_PRECISION = set()
+
+
+def replace_once(text, old, new):
+    if text.count(old) != 1:
+        raise SystemExit(f"generate.py: expected exactly one occurrence of {old!r}, found {text.count(old)}")
+    return text.replace(old, new)
+
+
+def defs_scad():
+    """Writes Reference/generated/baseplate-defs.scad and returns its path.
+
+    The baseplate source without its top-level model call, so its modules can be called alone.
+    """
+    text = SCAD.read_text()
+    text = replace_once(
+        text,
+        "color(\"tomato\")\ngridfinityBaseplate(gridx, gridy, l_grid, distancex, distancey, "
+        "style_plate, enable_magnet, style_hole, fitx, fity);\n",
+        "",
+    )
+    for lib in ("gridfinity-rebuilt-utility.scad", "standard.scad"):
+        text = replace_once(text, f"include <{lib}>", f"include <{SCAD.parent / lib}>")
+    GENERATED_DIR.mkdir(exist_ok=True)
+    out = GENERATED_DIR / "baseplate-defs.scad"
+    out.write_text(text + CASE_SELECTOR)
+    return out
 
 
 def parse_ascii_stl(path):
@@ -69,7 +126,7 @@ def round_stl_to_float32(path):
 
 
 def run_case(name, scad=None, stl=None):
-    scad = scad or SCAD
+    scad = scad or (defs_scad() if name in DEFS_CASES else SCAD)
     defines = [arg for d in CASES[name] for arg in ("-D", d)]
     STL_DIR.mkdir(exist_ok=True)
     stl = stl or STL_DIR / f"{name}.stl"

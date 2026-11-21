@@ -46,16 +46,12 @@ jobs:
         if-no-files-found: error
         overwrite: true
 
-  deploy:
+  # Puts the built customizers together into one site and uploads it for Pages. This runs in its
+  # own job, apart from the deployment: deploy-pages looks the artifact up by name in the workflow
+  # run, and a job boundary gives the upload time to be listed before that lookup.
+  assemble:
     needs: build
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
     - uses: actions/checkout@v4
     - uses: actions/download-artifact@v4
@@ -66,5 +62,17 @@ jobs:
     - uses: actions/upload-pages-artifact@v3
       with:
         path: _site
+
+  deploy:
+    needs: assemble
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
     - id: deployment
       uses: actions/deploy-pages@v4
